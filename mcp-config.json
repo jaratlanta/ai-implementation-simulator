@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "meaningful-ai-simulator": {
+      "command": "npx",
+      "args": ["tsx", "server/src/mcp/index.ts"],
+      "cwd": ".",
+      "env": {}
+    }
+  }
+}

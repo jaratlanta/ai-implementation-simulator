@@ -1,0 +1,107 @@
+/**
+ * AI Implementation Simulator - Backend Server
+ * Express server for Meaningful AI owl agent workshop
+ */
+console.log("------------------ SERVER STARTING ------------------");
+import dotenv from 'dotenv';
+// Use override: true because Claude Desktop injects empty ANTHROPIC_API_KEY into the shell
+dotenv.config({ override: true });
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import chatRoutes from './routes/chat.js';
+import aiRoutes from './routes/ai.js';
+import { closePool } from './db/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 7811;
+
+// CORS
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:7812',
+];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('[CORS] Blocked origin:', origin);
+      callback(null, true);
+    }
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '50mb' }));
+
+// Request logging in development
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, _res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+  });
+}
+
+// Health check
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Routes
+app.use('/chat', chatRoutes);
+app.use('/ai', aiRoutes);
+
+// Serve static frontend in production
+const distPath = path.resolve(__dirname, '../../dist');
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(distPath));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
+// Error handling
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Server] Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+// 404 handler
+app.use((_req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Start server
+const server = app.listen(PORT, () => {
+  console.log(`[Server] Running on http://localhost:${PORT}`);
+  console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('[Server] SIGTERM received, shutting down...');
+  server.close(async () => {
+    await closePool();
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  console.log('[Server] SIGINT received, shutting down...');
+  server.close(async () => {
+    await closePool();
+    process.exit(0);
+  });
+});
+
+export default app;

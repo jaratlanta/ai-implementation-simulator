@@ -1,0 +1,26 @@
+{
+  "name": "ai-implementation-simulator",
+  "version": "1.0.0",
+  "description": "Meaningful AI Implementation Simulator - Gamified AI strategy builder with owl agents",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:app\" \"npm run dev:server\"",
+    "dev:app": "vite --port 7812",
+    "dev:server": "cd server && npm run dev",
+    "build": "vite build && cd server && npm install --production=false && npm run build",
+    "start": "cd server && node dist/index.js",
+    "preview": "vite preview --port 3002",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "gsap": "^3.14.2",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "jsdom": "^29.0.2",
+    "vitest": "^4.1.4"
+  }
+}
