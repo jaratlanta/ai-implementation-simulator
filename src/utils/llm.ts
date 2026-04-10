@@ -110,3 +110,69 @@ async function callGeminiDirect(payload: LLMPayload, apiKey: string): Promise<LL
 
     throw new Error('All Gemini models failed');
 }
+
+export async function callLLMStream(payload: LLMPayload, onToken: (text: string) => void): Promise<LLMResponse> {
+    const geminiKey = (import.meta.env.VITE_GEMINI_API_KEY as string);
+    if (!geminiKey) {
+        return { success: false, content: '', error: 'No LLM available', provider: 'gemini' };
+    }
+    
+    let fullPrompt = payload.prompt;
+    if (payload.systemPrompt) {
+        fullPrompt = `${payload.systemPrompt}\n\nUSER REQUEST: ${payload.prompt}`;
+    }
+
+    const model = 'gemini-2.5-flash';
+    const apiVersion = 'v1beta';
+    const url = `https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:streamGenerateContent?key=${geminiKey}&alt=sse`;
+
+    const requestBody: any = {
+        contents: [{ parts: [{ text: fullPrompt }] }],
+        generationConfig: {
+            maxOutputTokens: payload.maxTokens || 1000,
+            temperature: payload.temperature || 0.7
+        }
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error('Stream request failed');
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let fullText = "";
+        
+        if (reader) {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n");
+                for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                        const dataStr = line.slice(6);
+                        if (dataStr.trim() === "[DONE]") continue;
+                        try {
+                            const data = JSON.parse(dataStr);
+                            const textPart = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (textPart) {
+                                fullText += textPart;
+                                onToken(fullText);
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+        }
+        return { success: true, content: fullText, provider: 'gemini' };
+    } catch (e: any) {
+        return { success: false, content: '', error: e.message, provider: 'gemini' };
+    }
+}

@@ -9,6 +9,7 @@ dotenv.config({ override: true });
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import chatRoutes from './routes/chat.js';
 import aiRoutes from './routes/ai.js';
@@ -68,7 +69,7 @@ const distPath = path.resolve(__dirname, '../../dist/client');
 const distPathFallback = path.resolve(__dirname, '../../dist');
 const staticDir = (process.env.STATIC_DIR)
   ? path.resolve(process.env.STATIC_DIR)
-  : require('fs').existsSync(distPath) ? distPath : distPathFallback;
+  : fs.existsSync(distPath) ? distPath : distPathFallback;
 
 if (process.env.NODE_ENV === 'production') {
   console.log(`[Server] Serving static files from: ${staticDir}`);

@@ -49,6 +49,13 @@ export class ReportModal {
         requestAnimationFrame(() => this.overlay.classList.add('visible'));
     }
 
+    public updateContent(htmlContent: string) {
+        const body = this.overlay.querySelector('.report-modal-body');
+        if (body) {
+            body.innerHTML = htmlContent;
+        }
+    }
+
     public hide() {
         this.overlay.classList.remove('visible');
         setTimeout(() => { this.overlay.style.display = 'none'; }, 300);

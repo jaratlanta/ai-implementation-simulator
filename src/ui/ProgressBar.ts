@@ -69,8 +69,8 @@ export class ProgressBar {
                 </div>
             `;
 
-            // Make completed phases clickable to open their report
-            if (isCompleted && this.onPhaseClick) {
+            // Make all phases clickable to open their document
+            if (this.onPhaseClick) {
                 phaseEl.addEventListener('click', () => this.onPhaseClick!(phase));
             }
 

@@ -11,7 +11,7 @@ import { animateMessageIn, crossfadeImage, buttonPress, owlSwitchAnimation } fro
 import { ProgressBar } from './ProgressBar';
 import { OWL_INFO, type OwlId } from '../types/owl';
 import type { ChatMessage } from '../types/chat';
-import { callLLM } from '../utils/llm';
+import { callLLM, callLLMStream } from '../utils/llm';
 import { InfoPanel } from './InfoPanel';
 import { ReportModal } from './ReportModal';
 
@@ -127,6 +127,7 @@ export class ChatScreen {
     private infoPanel: InfoPanel;
     private reportModal: ReportModal;
     private messageSource: 'typed' | 'quick_reply' = 'typed';
+    private activeReportPhase: number | null = null;
 
     // Default scene carousel
     private defaultScenes: string[] = [];
@@ -362,8 +363,8 @@ export class ChatScreen {
                     <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-main);">Generating your scene...</span>
                 </div>
                 <img id="scene-image" src="" alt="Scene" style="display:none;" />
-                <button id="info-btn" class="info-btn" title="How is this built?">?</button>
             </div>
+            <button id="info-btn" class="info-btn" title="How is this built?">?</button>
 
             <!-- Chat Panel (Right Side) -->
             <div class="chat-panel">
@@ -433,55 +434,172 @@ export class ChatScreen {
 
     /**
      * Show a phase completion report in a modal.
-     * Generates the report from chat history if not already cached.
+     * Generates an up-to-date document based on the latest conversation.
      */
     private async showPhaseReport(phase: number) {
+        this.activeReportPhase = phase;
         const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
-        const title = `${phaseNames[phase]} Report`;
+        const title = `${phaseNames[phase]} Document`;
 
-        // Find the readout content from chat history (the formatted brief)
-        const readoutKeywords: Record<number, string[]> = {
-            1: ['Discovery Brief', 'DISCOVERY BRIEF'],
-            2: ['Strategy Brief', 'STRATEGY BRIEF', 'AI STRATEGY BRIEF'],
-            3: ['Implementation Plan', 'IMPLEMENTATION PLAN'],
-        };
+        const cacheKey = `ais_report_data_${this.options.sessionId}_${phase}`;
+        const cachedDataStr = localStorage.getItem(cacheKey);
+        let data: any = {};
+        if (cachedDataStr) {
+            try { data = JSON.parse(cachedDataStr); } catch (e) {}
+        }
 
-        const keywords = readoutKeywords[phase] || [];
-        const readoutMsg = this.chatHistory.find(msg =>
-            msg.role === 'assistant' && keywords.some(kw => msg.content.includes(kw))
-        );
+        let html = '';
+        if (phase === 1) {
+             html = `
+<div class="report-template" style="color: white; font-family: 'Inter', sans-serif;">
+  <div style="background: linear-gradient(135deg, #1e293b, #0f172a); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+         <h1 style="color: #38bdf8; margin: 0; font-size: 1.8rem; letter-spacing: -0.5px;">Discovery Phase Report</h1>
+         <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">Phase 1</span>
+     </div>
+     
+     <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #38bdf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; margin-top: 0;">Company Context</h3>
+        <p style="font-size: 1.15rem; font-weight: 500; margin: 0; line-height: 1.5;">${data.companyName || 'Tracking firm details...'}</p>
+     </div>
 
-        if (readoutMsg) {
-            // Parse the markdown content into HTML for the modal
-            const htmlContent = this.parseMarkdown(readoutMsg.content);
-            this.reportModal.show(title, htmlContent);
+     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #818cf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+           <h3 style="color: #818cf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Key Challenges</h3>
+           <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.challenges || 'Listening for key challenges...'}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #f472b6; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+           <h3 style="color: #f472b6; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Current Bottlenecks</h3>
+           <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.bottlenecks || 'Identifying process bottlenecks...'}</p>
+        </div>
+     </div>
+
+     <div style="background: rgba(167, 139, 250, 0.1); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(167, 139, 250, 0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="color: #c4b5fd; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Proposed Goal / Objective</h3>
+        <p style="font-size: 1.15rem; line-height: 1.6; color: #f8fafc; margin: 0;">${data.goal || 'Awaiting goal alignment...'}</p>
+     </div>
+  </div>
+</div>
+`;
+        } else if (phase === 2) {
+             html = `
+<div class="report-template" style="color: white; font-family: 'Inter', sans-serif;">
+  <div style="background: linear-gradient(135deg, #1e1b4b, #3b0764); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+         <h1 style="color: #c084fc; margin: 0; font-size: 1.8rem; letter-spacing: -0.5px;">Strategy Blueprint</h1>
+         <span style="background: rgba(192, 132, 252, 0.2); color: #c084fc; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">Phase 2</span>
+     </div>
+     
+     <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #c084fc; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="color: #d8b4fe; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; margin-top: 0;">Solution Overview</h3>
+        <p style="font-size: 1.15rem; line-height: 1.6; margin: 0;">${data.solutionOverview || 'Designing solution blueprint...'}</p>
+     </div>
+
+     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #38bdf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+           <h3 style="color: #38bdf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Selected AI Architecture</h3>
+           <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.aiModelsOptions || 'Evaluating LLM integrations...'}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #f472b6; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+           <h3 style="color: #f472b6; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Human-in-the-Loop Strategy</h3>
+           <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.hitlStrategy || 'Defining feedback mechanisms...'}</p>
+        </div>
+     </div>
+
+     <div style="background: rgba(52, 211, 153, 0.1); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(52, 211, 153, 0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="color: #6ee7b7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Estimated ROI / Impact</h3>
+        <p style="font-size: 1.15rem; line-height: 1.6; color: #f8fafc; margin: 0;">${data.roiEstimate || 'Calculating cost/benefit...'}</p>
+     </div>
+  </div>
+</div>
+`;
+        } else if (phase === 3) {
+             html = `
+<div class="report-template" style="color: white; font-family: 'Inter', sans-serif;">
+  <div style="background: linear-gradient(135deg, #064e3b, #022c22); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+         <h1 style="color: #34d399; margin: 0; font-size: 1.8rem; letter-spacing: -0.5px;">Implementation Plan</h1>
+         <span style="background: rgba(52, 211, 153, 0.2); color: #34d399; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">Phase 3</span>
+     </div>
+     
+     <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #34d399; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="color: #6ee7b7; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; margin-top: 0;">Architecture & Flow</h3>
+        <p style="font-size: 1.15rem; line-height: 1.6; margin: 0;">${data.architecture || 'Finalizing system design...'}</p>
+     </div>
+
+     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #38bdf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+           <h3 style="color: #38bdf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Milestone Timeline</h3>
+           <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.timeline || 'Estimating rollout sprints...'}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #fca5a5; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+           <h3 style="color: #fca5a5; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Risk Mitigation</h3>
+           <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.keyRisks || 'Identifying edge cases...'}</p>
+        </div>
+     </div>
+
+     <div style="background: rgba(99, 102, 241, 0.1); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="color: #818cf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Next Steps</h3>
+        <p style="font-size: 1.15rem; line-height: 1.6; color: #f8fafc; margin: 0;">${data.nextSteps || 'Awaiting phase completion...'}</p>
+     </div>
+  </div>
+</div>
+`;
+        }
+
+        if (this.reportModal.getElement().classList.contains('visible') && this.activeReportPhase === phase) {
+            this.reportModal.updateContent(html);
         } else {
-            // No readout found — generate one on the fly
-            this.reportModal.show(title, `
-                <div style="text-align:center;padding:2rem;color:var(--color-text-muted);">
-                    <p>Generating ${title.toLowerCase()}...</p>
-                </div>
-            `);
+            this.reportModal.show(title, html);
+        }
+    }
 
-            try {
-                const result = await callLLM({
-                    prompt: `Generate a comprehensive ${phaseNames[phase]} Report based on this conversation. Include tables, specific metrics, ROI analysis, Human-in-the-Loop vs Automation analysis, and actionable recommendations.
+    private async updateReportDataInBackground() {
+        const gear = this.options.currentGear || 1;
+        const phase = Math.floor(gear);
+        if (phase < 1 || phase > 3) return;
+        
+        if (this.chatHistory.length < 2) return;
+        
+        const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
+        let schemaPrompt = '';
+        if (phase === 1) {
+            schemaPrompt = `{ "companyName": "string or 'Not discussed'", "challenges": "string or 'Not discussed'", "bottlenecks": "string or 'Not discussed'", "goal": "string or 'Not discussed'" }`;
+        } else if (phase === 2) {
+            schemaPrompt = `{ "solutionOverview": "string or 'Not discussed'", "aiModelsOptions": "string or 'Not discussed'", "hitlStrategy": "string or 'Not discussed'", "roiEstimate": "string or 'Not discussed'" }`;
+        } else if (phase === 3) {
+            schemaPrompt = `{ "architecture": "string or 'Not discussed'", "timeline": "string or 'Not discussed'", "keyRisks": "string or 'Not discussed'", "nextSteps": "string or 'Not discussed'" }`;
+        }
+
+        const prompt = `Extract all known information from the conversation so far for the ${phaseNames[phase]} phase template.
+Keep answers concise (1-2 sentences max). DO NOT inject markdown, just plain text for JSON fields.
+Respond ONLY with a valid JSON object matching this schema exactly:
+${schemaPrompt}
 
 CONVERSATION CONTEXT:
-${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').substring(0, 4000)}
+${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').slice(-4000)}`;
 
-FORMAT: Use markdown with tables (| col | col |), headers (###), bold (**text**), and bullet points. Make it presentation-ready with specific numbers and analysis.`,
-                    maxTokens: 3000,
-                    temperature: 0.6,
-                });
-
-                if (result.success && result.content) {
-                    const htmlContent = this.parseMarkdown(result.content);
-                    this.reportModal.show(title, htmlContent);
+        try {
+            const res = await callLLM({ prompt, temperature: 0.1, jsonMode: true });
+            if (res.success && res.content) {
+                let parsed = null;
+                try {
+                    parsed = JSON.parse(res.content);
+                } catch {
+                     const cleaned = res.content.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+                     parsed = JSON.parse(cleaned);
                 }
-            } catch (err) {
-                this.reportModal.show(title, '<p style="color:var(--color-text-muted);">Could not generate report. Please continue the conversation to complete this phase.</p>');
+                if (parsed) {
+                    const cacheKey = `ais_report_data_${this.options.sessionId}_${phase}`;
+                    localStorage.setItem(cacheKey, JSON.stringify(parsed));
+                    
+                    if (this.activeReportPhase === phase && this.reportModal.getElement().classList.contains('visible')) {
+                        this.showPhaseReport(phase);
+                    }
+                }
             }
+        } catch (e) {
+            // Background, suppress error
         }
     }
 
@@ -744,6 +862,9 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
 
             // Generate quick reply suggestions in background
             this.generateQuickReplies(owlResponse);
+            
+            // Generate report JSON payload in background
+            this.updateReportDataInBackground();
         } else {
             const fallbackMsg = "Our owls are resting for a moment. Could you try that again?";
             this.chatHistory.push({ role: 'assistant', content: fallbackMsg, timestamp: new Date().toISOString(), agent_id: this.currentAgent });
@@ -805,10 +926,25 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
 
         html = result.join('\n');
 
+        // Headers
+        html = html.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
+        html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+
         // Bold **text**
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         // Italic *text* (but not inside already-processed strong tags)
         html = html.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+        
+        // Unordered lists (bullet points)
+        html = html.replace(/^[-\*]\s+\[x\]\s+(.*)$/gmi, '<li class="md-check-done">☑ $1</li>');
+        html = html.replace(/^[-\*]\s+\[ \]\s+(.*)$/gmi, '<li class="md-check-open">☐ $1</li>');
+        html = html.replace(/^[-\*]\s+(.*)$/gm, '<li>$1</li>');
+
+        // Wrap consecutive <li> in <ul> (simple approximation)
+        html = html.replace(/(<li>(?:.*?)<\/li>\n?)+/g, match => `<ul>${match}</ul>`);
+
         // Numbered list items at start of line
         html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="md-list-item"><span class="md-list-num">$1.</span> $2</div>');
 

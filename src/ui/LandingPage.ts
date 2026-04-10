@@ -16,13 +16,10 @@ export class LandingPage {
 
         this.element.innerHTML = `
             <div style="margin-bottom: 1.5rem;">
-                <img src="/brand/logo-horizontal.png" alt="Meaningful AI" style="width: 260px; height: auto;" onerror="this.outerHTML='<h2 style=\\'color:var(--color-delft-blue);font-family:var(--font-display);\\'>meaningful<span style=\\'color:var(--color-sky-blue)\\'>ai</span></h2>';" />
+                <img src="/brand/meaningful-owl-horizontal-reverse.png" alt="Meaningful AI" style="width: 260px; height: auto;" onerror="this.outerHTML='<h2 style=\\'color:var(--color-delft-blue);font-family:var(--font-display);\\'>meaningful<span style=\\'color:var(--color-sky-blue)\\'>ai</span></h2>';" />
             </div>
 
-            <h1 class="landing-title">AI Implementation Simulator</h1>
-            <p class="landing-subtitle">
-                Meet your Strategy Owls. Together, we'll build your AI implementation plan in about 30 minutes.
-            </p>
+            <h1 class="landing-title" style="margin-bottom: 2.5rem;">AI Implementation Simulator</h1>
 
             <div class="path-selector">
                 <button id="path-discovery" class="btn path-btn" style="font-size: 1rem; padding: 1rem 2rem;">
