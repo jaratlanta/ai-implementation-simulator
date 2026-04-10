@@ -32,11 +32,12 @@ if (process.env.FRONTEND_URL) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
+    // In production, allow all origins (same-domain serving)
+    if (!origin || process.env.NODE_ENV === 'production') return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('[CORS] Blocked origin:', origin);
+      console.log('[CORS] Allowed non-listed origin:', origin);
       callback(null, true);
     }
   },
@@ -62,11 +63,18 @@ app.use('/chat', chatRoutes);
 app.use('/ai', aiRoutes);
 
 // Serve static frontend in production
-const distPath = path.resolve(__dirname, '../../dist');
+// In Docker: server runs from /app/server/dist/, frontend is at /app/dist/client/
+const distPath = path.resolve(__dirname, '../../dist/client');
+const distPathFallback = path.resolve(__dirname, '../../dist');
+const staticDir = (process.env.STATIC_DIR)
+  ? path.resolve(process.env.STATIC_DIR)
+  : require('fs').existsSync(distPath) ? distPath : distPathFallback;
+
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(distPath));
+  console.log(`[Server] Serving static files from: ${staticDir}`);
+  app.use(express.static(staticDir));
   app.get('*', (_req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+    res.sendFile(path.join(staticDir, 'index.html'));
   });
 }
 
