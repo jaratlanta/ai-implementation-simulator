@@ -217,7 +217,7 @@ export class ChatScreen {
         try { localStorage.removeItem(SCENE_CACHE_KEY); } catch {}
 
         this.defaultScenesGenerating = true;
-        this.defaultScenes = new Array(6).fill('');
+        this.defaultScenes = new Array(1).fill('');
 
         // 1. Show a previously cached scene IMMEDIATELY (if available from IndexedDB)
         const cachedScene = await loadSceneFromIDB('owl_atlanta_0');
@@ -225,15 +225,11 @@ export class ChatScreen {
             this.defaultScenes[0] = cachedScene;
             this.showDefaultScene(0);
             console.log('[ChatScreen] Showing cached Atlanta scene instantly');
-        }
-
-        // 2. Generate fresh scenes in background
-        console.log('[ChatScreen] Generating default scenes...');
-
-        const generateOne = async (index: number) => {
+        } else {
+            console.log('[ChatScreen] Generating default scene...');
             try {
                 const config: any = {
-                    prompt: DEFAULT_SCENE_PROMPTS[index],
+                    prompt: DEFAULT_SCENE_PROMPTS[0],
                     style: ART_STYLES['3d-storybook'],
                     width: 1024, height: 1024,
                     aspectRatio: '1:1',
@@ -248,31 +244,19 @@ export class ChatScreen {
                 }
                 const result = await (window as any).imageGenerator.generate(config);
                 if (result.url) {
-                    this.defaultScenes[index] = result.url;
-                    if (index === 0 || this.defaultSceneIndex === 0) {
-                        this.showDefaultScene(index);
-                    }
-                    if (index === 0) {
-                        this.startDefaultSceneCarousel();
-                        // Cache scene 0 to IndexedDB for instant display next time
-                        saveSceneToIDB('owl_atlanta_0', result.url);
-                    }
-                    // Also cache a couple more for variety
-                    if (index <= 2) {
-                        saveSceneToIDB(`owl_atlanta_${index}`, result.url);
-                    }
-                    console.log(`[ChatScreen] Default scene ${index + 1}/6 ready`);
+                    this.defaultScenes[0] = result.url;
+                    this.showDefaultScene(0);
+                    saveSceneToIDB('owl_atlanta_0', result.url);
                 }
             } catch (err) {
-                console.warn(`[ChatScreen] Default scene ${index} failed:`, err);
+                console.warn(`[ChatScreen] Default scene failed:`, err);
             }
-        };
-
-        await generateOne(0);
-        await Promise.all([1, 2, 3, 4, 5].map(i => generateOne(i)));
+        }
 
         this.defaultScenesGenerating = false;
-        console.log(`[ChatScreen] ${this.defaultScenes.filter(s => s).length} default scenes generated`);
+        
+        // Immediately start loading a new image that includes the user avatar
+        this.startSceneImageCycle();
     }
 
     /**
@@ -383,9 +367,6 @@ export class ChatScreen {
 
             <!-- Chat Panel (Right Side) -->
             <div class="chat-panel">
-                <!-- Progress Bar -->
-                <div id="progress-container" class="progress-container"></div>
-
                 <!-- Header -->
                 <div id="chat-header" class="chat-header" style="background: ${owl.color};">
                     <img id="owl-header-avatar" src="${owlAvatar}" alt="${owl.name}" onerror="this.style.background='${owl.color}';" />
@@ -397,6 +378,9 @@ export class ChatScreen {
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                     </button>
                 </div>
+
+                <!-- Progress Bar -->
+                <div id="progress-container" class="progress-container"></div>
 
                 <!-- Messages -->
                 <div id="chat-messages" class="chat-messages"></div>
@@ -886,13 +870,35 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
             feedbackRow.className = 'message-feedback';
             const msgIdx = this.chatHistory.length;
             feedbackRow.innerHTML = `
-                <button class="feedback-btn" data-rating="positive" title="Helpful">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-                </button>
-                <button class="feedback-btn" data-rating="negative" title="Not helpful">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
-                </button>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <button class="copy-btn" title="Copy text">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                    <span class="copy-toast">Copied to clipboard</span>
+                </div>
+                <div class="feedback-thumbs">
+                    <button class="feedback-btn" data-rating="positive" title="Helpful">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                    </button>
+                    <button class="feedback-btn" data-rating="negative" title="Not helpful">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                    </button>
+                </div>
             `;
+            
+            feedbackRow.querySelector('.copy-btn')?.addEventListener('click', async (e) => {
+                try {
+                    await navigator.clipboard.writeText(displayContent);
+                    const btn = e.currentTarget as HTMLElement;
+                    btn.style.color = 'var(--color-success)';
+                    const toast = btn.nextElementSibling as HTMLElement;
+                    if (toast) {
+                        toast.classList.add('show');
+                        setTimeout(() => { toast.classList.remove('show'); btn.style.color = ''; }, 2000);
+                    }
+                } catch (err) {}
+            });
+
             feedbackRow.querySelectorAll('.feedback-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const rating = (e.currentTarget as HTMLElement).dataset.rating as string;

@@ -57,8 +57,13 @@ export class AvatarCreator {
             </div>` : ''}
 
             <div id="step-photo" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-                <button id="webcam-btn" class="btn" style="width: 220px;">${this.savedAvatarUrl ? 'New Photo' : 'Take a Photo'}</button>
-                <button id="skip-btn" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 0.9rem; font-family: var(--font-main); text-decoration: underline; padding: 0.5rem;">${this.savedAvatarUrl ? 'Keep current avatar — let\'s go!' : 'Skip photo — let\'s get started!'}</button>
+                ${this.savedAvatarUrl ? `
+                <button id="skip-btn" class="btn" style="width: 220px;">Keep current avatar &mdash; let's go!</button>
+                <button id="webcam-btn" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 0.9rem; font-family: var(--font-main); text-decoration: underline; padding: 0.5rem;">New Photo</button>
+                ` : `
+                <button id="webcam-btn" class="btn" style="width: 220px;">Take a Photo</button>
+                <button id="skip-btn" style="background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 0.9rem; font-family: var(--font-main); text-decoration: underline; padding: 0.5rem;">Skip photo &mdash; let's get started!</button>
+                `}
             </div>
 
             <div id="loading-state" class="hidden" style="margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
@@ -358,12 +363,21 @@ export class AvatarCreator {
 
         let stream: MediaStream | null = null;
 
+        // Webcam requires HTTPS (except localhost). Fall back to file upload if unavailable.
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.warn('[AvatarCreator] Webcam not available (requires HTTPS). Falling back to file upload.');
+            modalContainer.innerHTML = '';
+            this.openFileUpload();
+            return;
+        }
+
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } })
             .then(s => { stream = s; video.srcObject = stream; })
             .catch(err => {
                 console.error("Webcam err:", err);
-                alert("Could not access webcam.");
                 modalContainer.innerHTML = '';
+                // Fall back to file upload
+                this.openFileUpload();
             });
 
         const stopWebcam = () => {
@@ -391,6 +405,23 @@ export class AvatarCreator {
                 }
             }, 'image/jpeg', 0.9);
         });
+    }
+
+    /**
+     * File upload fallback when webcam is unavailable (HTTP, permissions denied, etc.)
+     */
+    private openFileUpload() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'user'; // Prefer front camera on mobile
+        input.addEventListener('change', async () => {
+            const file = input.files?.[0];
+            if (file) {
+                await this.processPhotoFile(file);
+            }
+        });
+        input.click();
     }
 
     public mount() {

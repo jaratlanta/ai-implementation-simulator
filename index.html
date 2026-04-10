@@ -183,12 +183,12 @@
 
     /* AI glossary terms — clickable inline terms with expandable definitions */
     .ai-term {
-      display: inline; cursor: pointer; border-bottom: 1px dotted rgba(96,203,232,0.6);
+      display: inline; cursor: pointer; border-bottom: 2px solid rgba(96,203,232,0.9);
       transition: all var(--transition-fast); position: relative;
     }
-    .ai-term:hover { border-bottom-color: var(--color-sky-blue); }
-    .message-bubble.user .ai-term { border-bottom-color: rgba(74,102,172,0.4); }
-    .message-bubble.user .ai-term:hover { border-bottom-color: var(--color-true-blue); }
+    .ai-term:hover { border-bottom-color: var(--color-sky-blue); border-bottom-width: 3px; }
+    .message-bubble.user .ai-term { border-bottom-color: rgba(74,102,172,0.6); }
+    .message-bubble.user .ai-term:hover { border-bottom-color: var(--color-true-blue); border-bottom-width: 3px; }
     .ai-term-tooltip {
       display: none; margin-top: 0.5rem; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm);
       background: rgba(74,102,172,0.1); border-left: 3px solid var(--color-true-blue);
@@ -316,16 +316,32 @@
 
     /* === FEEDBACK BUTTONS (RL) — inside bubble, bottom-right === */
     .message-feedback {
-      display: flex; gap: 0.15rem; justify-content: flex-end; margin-top: 0.4rem; padding-top: 0.3rem;
+      display: flex; justify-content: space-between; align-items: center; margin-top: 0.1rem; padding-top: 0.1rem;
       border-top: 1px solid rgba(0,0,0,0.06); opacity: 0.35; transition: opacity var(--transition-fast);
+      height: 18px; line-height: 1;
+    }
+    .feedback-thumbs {
+      display: flex; gap: 0; align-items: center;
     }
     .message-bubble:hover .message-feedback { opacity: 1; }
-    .feedback-btn {
-      background: none; border: none; cursor: pointer; padding: 2px 4px;
-      border-radius: var(--radius-sm); transition: all var(--transition-fast); color: var(--color-true-blue); opacity: 0.5;
+    .feedback-btn, .copy-btn {
+      background: none; border: none; cursor: pointer; padding: 2px;
+      border-radius: var(--radius-sm); transition: all var(--transition-fast); color: var(--color-delft-blue); opacity: 0.8;
+      display: flex; align-items: center; justify-content: center;
     }
-    .feedback-btn:hover { opacity: 1; }
+    .feedback-btn:hover, .copy-btn:hover { opacity: 1; color: var(--color-sky-blue); }
+    .feedback-btn:active, .copy-btn:active { transform: scale(0.95); }
     .feedback-btn.selected { opacity: 1; color: var(--color-sky-blue); }
+
+    .copy-toast {
+        position: absolute; left: 24px; font-size: 0.7rem; color: var(--color-sky-blue);
+        opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+        transform: translateY(4px); white-space: nowrap; font-weight: 500;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .copy-toast.show {
+        opacity: 1; transform: translateY(0);
+    }
 
     /* === REPORT MODAL === */
     .report-modal-overlay {
