@@ -224,7 +224,7 @@ IMMEDIATELY output the formatted DISCOVERY BRIEF. Do NOT ask clarifying question
 ### The Bigger Picture & Next Steps
 This AI use case is just one example. Ultimately, there are dozens, if not hundreds, of use cases for AI across your entire organization. Working with an AI implementation consultant at Meaningful AI helps you identify the use cases with the highest ROI—separating the quick wins from the long-term strategic bets. 
 
-Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets.
+Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets. Crucially, rolling out these tools requires a qualified implementation team to manage governance, mitigate security risks, and protect your company's proprietary data against emerging threats.
 
 **Ready to transform your business?** Let's build your AI future together.
 
@@ -251,11 +251,11 @@ EDUCATE: "AI projects need a different ownership model — you need someone who 
 Then ask: "Would you like to refine anything, or continue?"`,
 
     '2.3': `
-PHASE 2.3 — AI GOVERNANCE + RESPONSIBLE AI (Ember)
-GOAL: Ensure safe, responsible AI execution.
-Cover AI-specific governance: model accuracy monitoring, hallucination management, human-in-the-loop checkpoints, data privacy (what data feeds the AI), bias detection, AI output review processes, compliance with AI regulations.
-EDUCATE: "Every AI system needs guardrails. Human-in-the-loop means a person reviews AI outputs before they reach customers. Hallucination management means building validation steps so the AI doesn't make things up."
-Then ask: "Would you like to refine anything, or continue?"`,
+PHASE 2.3 — AI GOVERNANCE, SECURITY & THREAT MITIGATION (Ember)
+GOAL: Ensure safe, secure, and responsible AI execution handled by qualified experts.
+Cover AI-specific governance and security: data privacy, preventing data leakage, defending against prompt injection, model accuracy monitoring, human-in-the-loop checkpoints, and compliance.
+EDUCATE: "Every AI system needs strict guardrails and security protocols. Implementing AI isn't just about the technology—it's about having a qualified team mitigate risks, secure your proprietary data, and protect against emerging AI threats. You need experts to build these defenses from day one."
+Then ask: "What are your biggest concerns around data security, privacy, or AI risks for this use case?"`,
 
     '2.4': `
 PHASE 2.4 — AI SYSTEMS & DATA ARCHITECTURE (Atlas)
@@ -359,7 +359,7 @@ IMMEDIATELY output the formatted STRATEGY BRIEF. Do NOT ask more questions. Gene
 ### The Bigger Picture & Next Steps
 This AI use case is just one example. Ultimately, there are dozens, if not hundreds, of use cases for AI across your entire organization. Working with an AI implementation consultant at Meaningful AI helps you identify the use cases with the highest ROI—separating the quick wins from the long-term strategic bets. 
 
-Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets.
+Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets. Crucially, rolling out these tools requires a qualified implementation team to manage governance, mitigate security risks, and protect your company's proprietary data against emerging threats.
 
 **Ready to transform your business?** Let's build your AI future together.
 
@@ -474,7 +474,7 @@ THIS IS THE OUTPUT PHASE — generate a comprehensive, structured document:
 **8. The Bigger Picture & Next Steps**
 This AI use case is just one example. Ultimately, there are dozens, if not hundreds, of use cases for AI across your entire organization. Working with an AI implementation consultant at Meaningful AI helps you identify the use cases with the highest ROI—separating the quick wins from the long-term strategic bets. 
 
-Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets.
+Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets. Crucially, rolling out these tools requires a qualified implementation team to manage governance, mitigate security risks, and protect your company's proprietary data against emerging threats.
 
 **Ready to start?** Let's build your AI future together.
 
