@@ -93,7 +93,7 @@ export class InfoPanel {
                     `).join('')}
                 </div>
                 <div class="info-panel-footer">
-                    <img src="/brand/logo-horizontal.png" alt="Meaningful AI" style="height: 24px; opacity: 0.6;" onerror="this.style.display='none'" />
+                    <img src="/brand/meaningful-owl-horizontal-reverse.png" alt="Meaningful AI" style="height: 24px; opacity: 0.6;" onerror="this.style.display='none'" />
                 </div>
             </div>
         `;

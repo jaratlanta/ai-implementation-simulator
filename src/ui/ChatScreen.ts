@@ -375,9 +375,15 @@ export class ChatScreen {
                         <h3 id="owl-header-name">${owl.name}</h3>
                         <span id="owl-header-role">${owl.role}</span>
                     </div>
-                    <button id="reset-btn" class="reset-btn" title="Start over">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                    </button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button id="download-report-btn" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.7rem; border-color: rgba(255,255,255,0.3); color: white; border-radius: var(--radius-sm); border-width: 1px; display: flex; align-items: center; gap: 0.3rem;" title="Download Full Report">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            DOWNLOAD REPORT
+                        </button>
+                        <button id="reset-btn" class="reset-btn" title="Start over">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Progress Bar -->
@@ -421,6 +427,11 @@ export class ChatScreen {
 
         resetBtn.addEventListener('click', () => this.handleReset());
 
+        const downloadBtn = this.element.querySelector('#download-report-btn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => this.showFullReport());
+        }
+
         // Info panel: "How is this built?"
         const infoBtn = this.element.querySelector('#info-btn');
         if (infoBtn) {
@@ -432,12 +443,7 @@ export class ChatScreen {
         this.element.appendChild(this.reportModal.getElement());
     }
 
-    /**
-     * Show a phase completion report in a modal.
-     * Generates an up-to-date document based on the latest conversation.
-     */
-    private async showPhaseReport(phase: number) {
-        this.activeReportPhase = phase;
+    private getPhaseHtml(phase: number): string {
         const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
         const title = `${phaseNames[phase]} Document`;
 
@@ -589,16 +595,35 @@ export class ChatScreen {
             }
         }
 
-        // Seamless handover: If the official brief is generated, it becomes the entire document.
         if (officialBriefFound) {
             html = officialBriefHtml;
         }
+
+        return html;
+    }
+
+    private async showPhaseReport(phase: number) {
+        this.activeReportPhase = phase;
+        const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
+        const title = `${phaseNames[phase]} Document`;
+        const html = this.getPhaseHtml(phase);
 
         if (this.reportModal.getElement().classList.contains('visible') && this.activeReportPhase === phase) {
             this.reportModal.updateContent(html);
         } else {
             this.reportModal.show(title, html);
         }
+    }
+
+    private async showFullReport() {
+        this.activeReportPhase = null;
+        let fullHtml = `
+<div style="display:flex; flex-direction:column; gap: 2rem;">
+  ${this.getPhaseHtml(1)}
+  ${this.getPhaseHtml(2)}
+  ${this.getPhaseHtml(3)}
+</div>`;
+        this.reportModal.show("Meaningful AI - Full Implementation Report", fullHtml);
     }
 
     private async updateReportDataInBackground() {
