@@ -221,6 +221,13 @@ IMMEDIATELY output the formatted DISCOVERY BRIEF. Do NOT ask clarifying question
 
 **Gear Target:** Gear [current] → Gear [target]
 
+### The Bigger Picture & Next Steps
+This AI use case is just one example. Ultimately, there are dozens, if not hundreds, of use cases for AI across your entire organization. Working with an AI implementation consultant at Meaningful AI helps you identify the use cases with the highest ROI—separating the quick wins from the long-term strategic bets. 
+
+Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets.
+
+**Ready to transform your business?** Let's build your AI future together.
+
 ---
 
 Now let's move into Strategy and build out the full plan. Ready?"
@@ -349,6 +356,13 @@ IMMEDIATELY output the formatted STRATEGY BRIEF. Do NOT ask more questions. Gene
 | **Quarter 1** | Month 2-3 | [full team rollout] | [metric] |
 | **Year 1** | Month 4-12 | [scale + expand] | [metric] |
 
+### The Bigger Picture & Next Steps
+This AI use case is just one example. Ultimately, there are dozens, if not hundreds, of use cases for AI across your entire organization. Working with an AI implementation consultant at Meaningful AI helps you identify the use cases with the highest ROI—separating the quick wins from the long-term strategic bets. 
+
+Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets.
+
+**Ready to transform your business?** Let's build your AI future together.
+
 ---
 
 Now let's move to Implementation and finalize the business case. Ready?"`,
@@ -456,6 +470,13 @@ THIS IS THE OUTPUT PHASE — generate a comprehensive, structured document:
 1. [Immediate action 1]
 2. [Immediate action 2]
 3. [Immediate action 3]
+
+**8. The Bigger Picture & Next Steps**
+This AI use case is just one example. Ultimately, there are dozens, if not hundreds, of use cases for AI across your entire organization. Working with an AI implementation consultant at Meaningful AI helps you identify the use cases with the highest ROI—separating the quick wins from the long-term strategic bets. 
+
+Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets.
+
+**Ready to start?** Let's build your AI future together.
 
 ---
 
