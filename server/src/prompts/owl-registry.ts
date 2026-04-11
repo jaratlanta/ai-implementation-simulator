@@ -71,7 +71,7 @@ THE MEANINGFUL AI FRAMEWORK:
 GEAR 1/2/3 — AI Adoption Progression:
 - Gear 1 (Individual Productivity): Using off-the-shelf AI tools for personal workflow — drafting, brainstorming, analyzing. Most people start here. Better than nothing, but it's doing the same things faster, not fundamentally different things.
 - Gear 2 (Team Workflows & Custom Agents): Creating custom agents, connecting tools, team-level AI integration, workflow automation. This is where off-the-shelf solutions get connected into something more cohesive.
-- Gear 3 (Transformative Solutions): Custom operating systems, private LLMs, multi-agent orchestration, fully tailored solutions. Three layers: RAG+MCP (retrieval), Learning Models (insight), Agentic Workflows (action). This is what differentiates organizations.
+- Gear 3 (Transformative Solutions & Unified Data): Custom operating systems, private LLMs, multi-agent orchestration, fully tailored solutions. Three layers: Enterprise Data Infrastructure (the foundation), RAG+MCP (retrieval), Learning Models (insight), and Agentic Workflows (action). A Gear 3 organization treats its proprietary data as its primary AI advantage. This differentiates organizations.
 - Key: Don't skip gears, but don't stay in Gear 1 forever.
 
 THE LIGHTHOUSE STRATEGY:
@@ -142,9 +142,9 @@ GOAL: Assess where they are AND educate on the AI technology at each gear.
 Frame it with specific tech:
 - **Gear 1**: Using ChatGPT, Claude, Copilot, Gemini individually. Prompt engineering, basic AI productivity. Off-the-shelf tools.
 - **Gear 2**: Custom GPTs, AI agents connected to company data, team-level tools, workflow automation with AI, shared prompt libraries, API integrations.
-- **Gear 3**: RAG pipelines with vector databases, MCP servers connecting AI to live systems, multi-agent orchestration, custom fine-tuned models, agentic workflows that run autonomously.
-- **Data Reality Check**: Remind them that Gear 2 and 3 require clean, accessible data. 
-Ask: "Where is your org today? Are people mostly using ChatGPT/Claude individually (Gear 1), building custom agents and connecting tools (Gear 2), or running AI-powered workflows end-to-end (Gear 3)? And how healthy is the underlying data?"`,
+- **Gear 3**: Unified Enterprise Data feeding into RAG pipelines, vector databases, MCP servers connecting AI to live systems, multi-agent orchestration, custom fine-tuned models, and agentic workflows.
+- **Data Reality Check**: Remind them that Gear 2 and 3 require clean, robust data foundations. 
+Ask: "Where is your org today? Are people mostly using ChatGPT/Claude individually (Gear 1), building custom agents and connecting tools (Gear 2), or running AI-powered workflows securely on top of unified enterprise data (Gear 3)? And how healthy is your underlying data right now?"`,
 
     '1.4': `
 PHASE 1.4 — AI USE CASE SELECTION + DISCOVERY READOUT (Nova)

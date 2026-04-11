@@ -433,6 +433,23 @@ export class ChatScreen {
 
         resetBtn.addEventListener('click', () => this.handleReset());
 
+        const messagesEl = this.element.querySelector('#chat-messages') as HTMLElement;
+        if (messagesEl) {
+            messagesEl.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                if (target && target.classList.contains('ai-term')) {
+                    const termId = target.dataset.termId;
+                    if (termId) {
+                        const tooltip = document.getElementById(termId);
+                        if (tooltip) {
+                            tooltip.classList.toggle('visible');
+                        }
+                    }
+                    e.stopPropagation();
+                }
+            });
+        }
+
         const downloadBtn = this.element.querySelector('#download-report-btn');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', () => this.showFullReport());
@@ -1070,7 +1087,7 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
             const match = html.match(regex);
             if (match) {
                 const id = `ai-term-${term.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).slice(2, 6)}`;
-                const replacement = `<span class="ai-term" data-term-id="${id}" onclick="(function(e){var t=document.getElementById('${id}');if(t)t.classList.toggle('visible');e.stopPropagation();})(event)">${match[1]}</span><div id="${id}" class="ai-term-tooltip"><span class="ai-term-label">${term}</span>${definition}</div>`;
+                const replacement = `<span class="ai-term" data-term-id="${id}">${match[1]}</span><div id="${id}" class="ai-term-tooltip"><span class="ai-term-label">${term}</span>${definition}</div>`;
                 html = html.replace(regex, replacement);
                 annotated.add(term);
             }

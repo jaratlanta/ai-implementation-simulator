@@ -166,7 +166,13 @@ async function callGemini(
                     generationConfig: {
                         maxOutputTokens: options?.maxTokens || 1500,
                         temperature: options?.temperature || 0.8
-                    }
+                    },
+                    safetySettings: [
+                        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                    ]
                 })
             });
 
@@ -178,7 +184,9 @@ async function callGemini(
             }
 
             const data = (await response.json()) as any;
-            const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            
+            const parts = data.candidates?.[0]?.content?.parts || [];
+            const content = parts.map((p: any) => p.text).join('') || '';
 
             if (!content) {
                 console.warn(`[LLM] Gemini ${model.name} returned empty content`);
