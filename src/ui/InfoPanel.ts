@@ -108,7 +108,7 @@ export class InfoPanel {
                     <a href="https://bemeaningful.ai" target="_blank" rel="noopener noreferrer" style="display:inline-block;">
                         <img src="/brand/meaningful-owl-horizontal-reverse.png" alt="Meaningful AI" style="height: 24px; opacity: 0.6; transition: opacity 0.2s;" onerror="this.style.display='none'" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" />
                     </a>
-                    <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4); font-family: monospace;">v1.0.1</span>
+                    <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4); font-family: monospace;">v1.0.2</span>
                 </div>
             </div>
         `;

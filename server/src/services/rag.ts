@@ -75,9 +75,9 @@ export async function searchContentChunks(
                 source_name,
                 section,
                 content,
-                (1 - (embedding <=> $1::vector)) * CASE WHEN source_type = 'level2' THEN 0.85 ELSE 1.0 END as similarity
+                (1 - (embedding <=> $1::vector)) - CASE WHEN source_type = 'level2' THEN 0.04 ELSE 0 END as similarity
              FROM content_chunks
-             ORDER BY ((1 - (embedding <=> $1::vector)) * CASE WHEN source_type = 'level2' THEN 0.85 ELSE 1.0 END) DESC
+             ORDER BY ((1 - (embedding <=> $1::vector)) - CASE WHEN source_type = 'level2' THEN 0.04 ELSE 0 END) DESC
              LIMIT $2`,
             [embeddingStr, TOP_K]
         );
