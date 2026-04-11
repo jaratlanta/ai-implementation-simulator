@@ -51,6 +51,21 @@ function chunkText(text: string, size: number = CHUNK_SIZE, overlap: number = CH
     return chunks;
 }
 
+function getFilesRecursively(dir: string): string[] {
+    let results: string[] = [];
+    const list = fs.readdirSync(dir);
+    list.forEach((file) => {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
+        if (stat && stat.isDirectory()) {
+            results = results.concat(getFilesRecursively(fullPath));
+        } else if (file.endsWith('.txt') || file.endsWith('.md')) {
+            results.push(fullPath);
+        }
+    });
+    return results;
+}
+
 async function main() {
     console.log('=== Content Ingestion ===');
     console.log(`Content directory: ${CONTENT_DIR}`);
@@ -68,8 +83,9 @@ async function main() {
         console.log(`Loaded manifest with ${Object.keys(manifest).length} entries`);
     }
 
-    // Find all .txt and .md files
-    const files = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.txt') || f.endsWith('.md'));
+    // Find all .txt and .md files recursively
+    const allFiles = getFilesRecursively(CONTENT_DIR);
+    const files = allFiles.map(f => path.relative(CONTENT_DIR, f));
     console.log(`Found ${files.length} text files`);
 
     if (files.length === 0) {
@@ -93,8 +109,8 @@ async function main() {
         }
 
         const meta = manifest[file] || {
-            source_type: 'general',
-            source_name: file.replace('.txt', '').replace(/-/g, ' '),
+            source_type: file.includes('level2') ? 'level2' : 'general',
+            source_name: path.basename(file).replace('.txt', '').replace('.md', '').replace(/-/g, ' '),
             tags: [],
         };
 

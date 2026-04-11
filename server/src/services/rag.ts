@@ -75,15 +75,18 @@ export async function searchContentChunks(
                 source_name,
                 section,
                 content,
-                1 - (embedding <=> $1::vector) as similarity
+                (1 - (embedding <=> $1::vector)) * CASE WHEN source_type = 'level2' THEN 0.85 ELSE 1.0 END as similarity
              FROM content_chunks
-             ORDER BY embedding <=> $1::vector
+             ORDER BY ((1 - (embedding <=> $1::vector)) * CASE WHEN source_type = 'level2' THEN 0.85 ELSE 1.0 END) DESC
              LIMIT $2`,
             [embeddingStr, TOP_K]
         );
 
         const chunks = result.rows.filter(r => r.similarity > 0.3);
         console.log(`[RAG] Found ${chunks.length} relevant chunks (top similarity: ${chunks[0]?.similarity?.toFixed(3) || 'N/A'})`);
+        chunks.forEach((c, idx) => {
+            console.log(`      ${idx + 1}. [${c.source_type}] ${c.source_name} (sim: ${c.similarity.toFixed(3)})`);
+        });
 
         return chunks;
     } catch (error: any) {

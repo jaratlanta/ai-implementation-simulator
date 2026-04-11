@@ -16,9 +16,9 @@ const OWL_WORKSHOP_SCENES = [
     `${OWL_CHARACTER} floating happily over the beautiful Atlanta skyline and Beltline on a sunny day. Clean, natural, and grounded workspace view. No glowing holograms.`,
     `${OWL_CHARACTER} flying over the Atlanta skyline at sunset, with warm golden light reflecting off the skyscrapers. A peaceful perspective of the city. No floating UI elements.`,
     `${OWL_CHARACTER} hovering above the Atlanta Beltline surrounded by green trees and city lights. No glowing screens.`,
-    `${OWL_CHARACTER} perched in a cozy treehouse office with a view of the Atlanta skyline, warm amber lamplight, and shelves of physical books. No glowing holograms.`,
-    `${OWL_CHARACTER} standing at a large physical whiteboard covered in strategy diagrams, with the Atlanta skyline visible through a massive window. No futuristic interfaces.`,
-    `${OWL_CHARACTER} exploring a beautiful atrium with views of the Atlanta city center, sunlight streaming through a glass ceiling. A grounded corporate environment without futuristic interfaces.`,
+    `${OWL_CHARACTER} perched in a cozy treehouse with a view of the Atlanta skyline, warm amber lamplight, and shelves of physical books. No glowing holograms.`,
+    `${OWL_CHARACTER} hovering proudly near the Centennial Olympic Park fountain, with the Atlanta skyline glittering behind. No futuristic interfaces.`,
+    `${OWL_CHARACTER} exploring a beautiful atrium with views of the Atlanta city center, sunlight streaming through a glass ceiling. A grounded environment without futuristic interfaces.`,
 ];
 
 function hasSpecificTopic(history: { role: string; content: string }[]): boolean {
@@ -80,7 +80,7 @@ CRITICAL RULES:
 - The setting should ideally incorporate views of the Atlanta skyline or Beltline where appropriate
 - The characters should be actively engaged with the environment (e.g. Poly floating/flying happily around)
 - Warm cinematic lighting, 3D rendered, high quality textures
-- DO NOT INCLUDE floating UI, glowing holograms, or futuristic sci-fi interfaces. Keep the scene grounded, using physical objects, whiteboards, or natural environments.
+- DO NOT INCLUDE floating UI, glowing holograms, or futuristic sci-fi interfaces. Keep the scene grounded, using architectural spaces or natural environments.
 - Output ONLY the scene description in 2-3 sentences. No dialogue.`;
 
     try {
