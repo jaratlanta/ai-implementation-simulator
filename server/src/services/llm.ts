@@ -17,18 +17,45 @@ export interface LLMResponse {
 export async function generateText(
     prompt: string,
     systemPrompt?: string,
-    options?: { temperature?: number; maxTokens?: number }
+    options?: { temperature?: number; maxTokens?: number; provider?: string }
 ): Promise<LLMResponse> {
-    // Try Anthropic first
+    const forcedProvider = options?.provider;
+    
+    if (forcedProvider === 'gemini') {
+        const geminiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        if (geminiKey) {
+            const geminiResult = await callGemini(prompt, systemPrompt, geminiKey, options);
+            if (geminiResult.success) return geminiResult;
+        }
+        return { success: false, content: '', error: 'Gemini API failed or not configured' };
+    }
+
+    if (forcedProvider === 'openai') {
+        const openaiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+        if (openaiKey) {
+            const openaiResult = await callOpenAI(prompt, systemPrompt, openaiKey, options);
+            if (openaiResult.success) return openaiResult;
+        }
+        return { success: false, content: '', error: 'OpenAI API failed or not configured' };
+    }
+
+    // Default: Try Anthropic first
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     if (anthropicKey) {
         const result = await callAnthropic(prompt, systemPrompt, anthropicKey, options);
         if (result.success) return result;
-        console.warn('[LLM] Anthropic failed, falling back to Gemini:', result.error);
+        console.warn('[LLM] Anthropic failed, falling back downstream:', result.error);
+    }
+
+    // Fallback to OpenAI
+    const openaiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+    if (openaiKey) {
+        const result = await callOpenAI(prompt, systemPrompt, openaiKey, options);
+        if (result.success) return result;
     }
 
     // Fallback to Gemini
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     if (geminiKey) {
         return callGemini(prompt, systemPrompt, geminiKey, options);
     }
@@ -176,6 +203,70 @@ async function callGemini(
     }
 
     return { success: false, content: '', error: `All Gemini attempts failed. Last error: ${lastError}`, provider: 'gemini' };
+}
+
+/**
+ * Call OpenAI API
+ */
+async function callOpenAI(
+    prompt: string,
+    systemPrompt: string | undefined,
+    apiKey: string,
+    options?: { temperature?: number; maxTokens?: number }
+): Promise<LLMResponse> {
+    const model = process.env.OPENAI_MODEL || 'gpt-4o';
+
+    try {
+        console.log(`[LLM] Calling OpenAI ${model}...`);
+        const messages: any[] = [];
+        if (systemPrompt) {
+            messages.push({ role: 'system', content: systemPrompt });
+        }
+        messages.push({ role: 'user', content: prompt });
+
+        const body: any = {
+            model,
+            messages,
+            max_tokens: options?.maxTokens || 1500,
+            temperature: options?.temperature !== undefined ? options.temperature : 0.8
+        };
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const msg = (errorData as any).error?.message || `OpenAI API error: ${response.status}`;
+            console.warn('[LLM] OpenAI error:', response.status, msg);
+            return { success: false, content: '', error: msg, provider: 'openai' };
+        }
+
+        const data = (await response.json()) as any;
+        const content = data.choices?.[0]?.message?.content || '';
+
+        if (!content) {
+            return { success: false, content: '', error: 'Empty response from OpenAI', provider: 'openai' };
+        }
+
+        return {
+            success: true,
+            content: content.trim(),
+            provider: 'openai',
+            tokensUsed: data.usage ? {
+                input: data.usage.prompt_tokens || 0,
+                output: data.usage.completion_tokens || 0,
+            } : undefined,
+        };
+    } catch (error: any) {
+        console.error('[LLM] OpenAI exception:', error.message);
+        return { success: false, content: '', error: error.message, provider: 'openai' };
+    }
 }
 
 export default { generateText };

@@ -13,12 +13,12 @@ const OWL_CHARACTER = 'a geometric low-poly origami-style owl character made of 
  * Owl workshop scenes for early conversation / no specific topic yet
  */
 const OWL_WORKSHOP_SCENES = [
-    `${OWL_CHARACTER} perched in a cozy treehouse office, surrounded by floating holographic data visualizations, warm amber lamplight, and shelves of books. City lights visible through round windows.`,
-    `${OWL_CHARACTER} standing at a large glowing whiteboard covered in AI strategy diagrams and flowcharts, in a modern workspace with warm string lights and potted ferns.`,
-    `${OWL_CHARACTER} sitting in a comfortable leather chair in a warm study filled with books, a glowing crystal ball on the oak desk showing data patterns, maps and charts pinned to the walls.`,
-    `${OWL_CHARACTER} perched on a branch overlooking a bustling modern city at sunset, holographic screens floating nearby showing business analytics, warm golden light.`,
-    `${OWL_CHARACTER} in a cozy library with towering bookshelves, a warm fireplace, floating digital screens showing AI dashboards, and a large table covered in strategy documents.`,
-    `${OWL_CHARACTER} hovering above a futuristic atrium with living walls of greenery, large screens showing AI-powered business dashboards, and sunlight streaming through a glass ceiling.`,
+    `${OWL_CHARACTER} floating happily over the beautiful Atlanta skyline and Beltline on a sunny day. Clean, natural, and grounded workspace view. No glowing holograms.`,
+    `${OWL_CHARACTER} flying over the Atlanta skyline at sunset, with warm golden light reflecting off the skyscrapers. A peaceful perspective of the city. No floating UI elements.`,
+    `${OWL_CHARACTER} hovering above the Atlanta Beltline surrounded by green trees and city lights. No glowing screens.`,
+    `${OWL_CHARACTER} perched in a cozy treehouse office with a view of the Atlanta skyline, warm amber lamplight, and shelves of physical books. No glowing holograms.`,
+    `${OWL_CHARACTER} standing at a large physical whiteboard covered in strategy diagrams, with the Atlanta skyline visible through a massive window. No futuristic interfaces.`,
+    `${OWL_CHARACTER} exploring a beautiful atrium with views of the Atlanta city center, sunlight streaming through a glass ceiling. A grounded corporate environment without futuristic interfaces.`,
 ];
 
 function hasSpecificTopic(history: { role: string; content: string }[]): boolean {
@@ -76,9 +76,11 @@ YOUR TASK: Describe a scene where the character(s) are IN an environment that re
 
 CRITICAL RULES:
 - The environment MUST match the conversation subject
-- Include SPECIFIC visual props related to the topic
-- The characters should be actively engaged with the environment
+- Include SPECIFIC physical visual props related to the topic
+- The setting should ideally incorporate views of the Atlanta skyline or Beltline where appropriate
+- The characters should be actively engaged with the environment (e.g. Poly floating/flying happily around)
 - Warm cinematic lighting, 3D rendered, high quality textures
+- DO NOT INCLUDE floating UI, glowing holograms, or futuristic sci-fi interfaces. Keep the scene grounded, using physical objects, whiteboards, or natural environments.
 - Output ONLY the scene description in 2-3 sentences. No dialogue.`;
 
     try {

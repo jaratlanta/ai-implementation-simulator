@@ -7,7 +7,7 @@ import { sendMessage, type MessageResponse } from '../api/chat';
 import { extractSceneDescription } from '../api/scene';
 import { ART_STYLES } from '../image';
 import { getOwlAvatarReference } from '../api/owl-avatar';
-import { animateMessageIn, crossfadeImage, buttonPress, owlSwitchAnimation } from '../utils/animations';
+import { animateMessageIn, crossfadeImage, buttonPress, owlSwitchAnimation, staggerFadeIn } from '../utils/animations';
 import { ProgressBar } from './ProgressBar';
 import { OWL_INFO, type OwlId } from '../types/owl';
 import type { ChatMessage } from '../types/chat';
@@ -338,13 +338,29 @@ export class ChatScreen {
         }
     }
 
-    private getOwlAvatar(owlId: OwlId): string {
-        return this.options.owlAvatars[owlId] || `https://placehold.co/200x200/222D63/ffffff.png?text=${owlId[0].toUpperCase()}`;
+    private getOwlAvatar(_owlId?: OwlId): string {
+        const gear = this.options.currentGear || 1;
+        const phase = Math.floor(gear);
+        
+        if (phase === 2) return '/brand/3d-owl-green.png';
+        if (phase === 3) return '/brand/3d-owl-red.png';
+        
+        return this.options.owlAvatars['poly'] || '/brand/3d-owl.jpg';
     }
 
     private render() {
-        const owl = OWL_INFO[this.currentAgent];
-        const owlAvatar = this.getOwlAvatar(this.currentAgent);
+        const gear = this.options.currentGear || 1;
+        const phase = Math.floor(gear);
+
+        let owlName = 'Discovery';
+        let owlRole = 'Phase 1';
+        let owlColor = '#4A66AC';
+        if (phase === 2) { owlName = 'Strategy'; owlRole = 'Phase 2'; owlColor = '#34d399'; }
+        if (phase === 3) { owlName = 'Implementation'; owlRole = 'Phase 3'; owlColor = '#E83151'; }
+
+        const owlAvatar = this.getOwlAvatar();
+        const splashImages = ['/owl-scenes/splash-1.png', '/owl-scenes/splash-2.png', '/owl-scenes/splash-3.png'];
+        const randomSplash = splashImages[Math.floor(Math.random() * splashImages.length)];
 
         this.element.innerHTML = `
             <!-- Scene Image Panel (Left Side) -->
@@ -352,28 +368,18 @@ export class ChatScreen {
                 <div class="scene-panel-logo">
                     <img src="/brand/owl-icon.png" alt="" style="width:28px;height:28px;" />
                 </div>
-                <div id="scene-splash" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1rem;padding:2rem;">
-                    <img src="/brand/3d-owl.jpg" alt="Meaningful AI Owl" style="width:280px;height:auto;border-radius:16px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.3));" />
-                    <img src="/brand/logo-horizontal.png" alt="Meaningful AI" style="width:180px;height:auto;opacity:0.7;" onerror="this.style.display='none'" />
-                    <div style="display:flex;gap:6px;margin-top:0.5rem;">
-                        <div class="typing-dot" style="width:6px;height:6px;"></div>
-                        <div class="typing-dot" style="width:6px;height:6px;"></div>
-                        <div class="typing-dot" style="width:6px;height:6px;"></div>
-                    </div>
-                    <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-main);">Generating your scene...</span>
-                </div>
-                <img id="scene-image" src="" alt="Scene" style="display:none;" />
+                <img id="scene-image" src="${randomSplash}" alt="Scene" style="display:block; width:100%; height:100%; object-fit:cover;" />
             </div>
             <button id="info-btn" class="info-btn" title="How is this built?">?</button>
 
             <!-- Chat Panel (Right Side) -->
             <div class="chat-panel">
                 <!-- Header -->
-                <div id="chat-header" class="chat-header" style="background: ${owl.color};">
-                    <img id="owl-header-avatar" src="${owlAvatar}" alt="${owl.name}" onerror="this.style.background='${owl.color}';" />
+                <div id="chat-header" class="chat-header" style="background: ${owlColor};">
+                    <img id="owl-header-avatar" src="${owlAvatar}" alt="${owlName}" onerror="this.style.background='${owlColor}';" />
                     <div class="chat-header-info">
-                        <h3 id="owl-header-name">${owl.name}</h3>
-                        <span id="owl-header-role">${owl.role}</span>
+                        <h2 id="owl-header-name" style="margin: 0; font-size: 1.25rem;">${owlName}</h2>
+                        <span id="owl-header-role" style="display:none;">${owlRole}</span>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <button id="download-report-btn" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.7rem; border-color: rgba(255,255,255,0.3); color: white; border-radius: var(--radius-sm); border-width: 1px; display: flex; align-items: center; gap: 0.3rem;" title="Download Full Report">
@@ -438,6 +444,10 @@ export class ChatScreen {
             this.element.appendChild(this.infoPanel.getElement());
             infoBtn.addEventListener('click', () => this.infoPanel.toggle());
         }
+
+        document.addEventListener('llm-provider-changed', (e: any) => {
+            this.options.llmProvider = e.detail.provider;
+        });
 
         // Report modal
         this.element.appendChild(this.reportModal.getElement());
@@ -698,18 +708,26 @@ ${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').slice(-4000)}`
         owlId = this.normalizeOwlId(owlId);
         if (owlId === this.currentAgent) return;
 
-        const owl = OWL_INFO[owlId];
+        const gear = this.options.currentGear || 1;
+        const phase = Math.floor(gear);
+
+        let owlName = 'Discovery';
+        let owlRole = 'Phase 1';
+        let owlColor = '#4A66AC';
+        if (phase === 2) { owlName = 'Strategy'; owlRole = 'Phase 2'; owlColor = '#34d399'; }
+        if (phase === 3) { owlName = 'Implementation'; owlRole = 'Phase 3'; owlColor = '#E83151'; }
+
         const header = this.element.querySelector('#chat-header') as HTMLElement;
         const avatar = this.element.querySelector('#owl-header-avatar') as HTMLImageElement;
         const name = this.element.querySelector('#owl-header-name') as HTMLElement;
         const role = this.element.querySelector('#owl-header-role') as HTMLElement;
 
-        owlSwitchAnimation(this.element.querySelector('#scene-panel') as HTMLElement, owl.name, owl.role);
+        owlSwitchAnimation(this.element.querySelector('#scene-panel') as HTMLElement, owlName, owlRole);
 
-        header.style.background = owl.color;
-        avatar.src = this.getOwlAvatar(owlId);
-        name.textContent = owl.name;
-        role.textContent = owl.role;
+        header.style.background = owlColor;
+        avatar.src = this.getOwlAvatar();
+        name.textContent = owlName;
+        role.textContent = owlRole;
 
         this.currentAgent = owlId;
     }
@@ -865,19 +883,39 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
         const repliesContainer = this.element.querySelector('#quick-replies') as HTMLElement;
         repliesContainer.innerHTML = '';
 
-        replies.forEach(reply => {
+        replies.forEach((reply, i) => {
             const btn = document.createElement('button');
             btn.className = 'quick-reply-btn';
             btn.textContent = reply;
+            
+            // Interaction animations
+            btn.addEventListener('mouseenter', () => {
+                // Ignore if it's currently scaling out
+                if (btn.style.opacity === '0') return;
+                btn.style.transform = 'scale(1.03) translateY(-2px)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                if (btn.style.opacity === '0') return;
+                btn.style.transform = '';
+            });
+
             btn.addEventListener('click', () => {
-                const chatInput = this.element.querySelector('#chat-input') as HTMLInputElement;
-                chatInput.value = reply;
-                repliesContainer.innerHTML = '';
-                this.messageSource = 'quick_reply';
-                this.handleSend();
+                buttonPress(btn);
+                // Quickly fade out other quick replies for a clean UI feeling
+                const allBtns = repliesContainer.querySelectorAll('.quick-reply-btn');
+                setTimeout(() => {
+                    const chatInput = this.element.querySelector('#chat-input') as HTMLInputElement;
+                    chatInput.value = reply;
+                    repliesContainer.innerHTML = '';
+                    this.messageSource = 'quick_reply';
+                    this.handleSend();
+                }, 150);
             });
             repliesContainer.appendChild(btn);
         });
+
+        // Magical stagger entrance for buttons
+        staggerFadeIn(repliesContainer, '.quick-reply-btn', { delay: 0.1, stagger: 0.08 });
 
         // Scroll messages to bottom so last message is visible above the quick replies
         const messagesEl = this.element.querySelector('#chat-messages') as HTMLElement;
@@ -908,7 +946,7 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
 
         this.showTypingIndicator();
 
-        const result = await sendMessage(this.options.sessionId, messageText, this.messageSource);
+        const result = await sendMessage(this.options.sessionId, messageText, this.messageSource, this.options.llmProvider);
         this.messageSource = 'typed'; // Reset after sending
 
         this.removeTypingIndicator();

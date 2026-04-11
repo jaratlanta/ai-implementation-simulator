@@ -247,7 +247,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
  */
 router.post('/:id/message', async (req: Request, res: Response) => {
     try {
-        const { message, source } = req.body; // source: 'typed' | 'quick_reply'
+        const { message, source, provider } = req.body;
 
         if (!message) {
             return res.status(400).json({ error: 'message is required' });
@@ -383,7 +383,8 @@ router.post('/:id/message', async (req: Request, res: Response) => {
         const isReadoutPhase = readoutPhases.includes(activePhase);
         const result = await llmService.generateText(chatPrompt, enrichedSystemPrompt, {
             temperature: isReadoutPhase ? 0.6 : 0.8,
-            maxTokens: activePhase === '3.2' ? 4000 : isReadoutPhase ? 3000 : 400
+            maxTokens: activePhase === '3.2' ? 4000 : isReadoutPhase ? 3000 : 400,
+            provider
         });
 
         let owlResponse = result.success

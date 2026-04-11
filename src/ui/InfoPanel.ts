@@ -77,6 +77,18 @@ export class InfoPanel {
                 <button class="info-panel-close" title="Close">&times;</button>
                 <h2 class="info-panel-title">Built with 6 AI Technologies</h2>
                 <p class="info-panel-subtitle">This isn't just a chatbot — it's a working showcase of modern AI toolsets.</p>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        Model Engine
+                    </label>
+                    <select id="model-select" style="background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.4rem 0.6rem; font-size: 0.85rem; cursor: pointer; min-width: 160px; outline: none;">
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="openai">OpenAI GPT-4o</option>
+                        <option value="gemini">Google Gemini</option>
+                    </select>
+                </div>
                 <div class="toolset-grid">
                     ${TOOLSETS.map(t => `
                         <div class="toolset-card" data-key="${t.key}">
@@ -93,12 +105,19 @@ export class InfoPanel {
                     `).join('')}
                 </div>
                 <div class="info-panel-footer">
-                    <img src="/brand/meaningful-owl-horizontal-reverse.png" alt="Meaningful AI" style="height: 24px; opacity: 0.6;" onerror="this.style.display='none'" />
+                    <a href="https://bemeaningful.ai" target="_blank" rel="noopener noreferrer" style="display:inline-block;">
+                        <img src="/brand/meaningful-owl-horizontal-reverse.png" alt="Meaningful AI" style="height: 24px; opacity: 0.6; transition: opacity 0.2s;" onerror="this.style.display='none'" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" />
+                    </a>
                 </div>
             </div>
         `;
 
         this.overlay.querySelector('.info-panel-close')!.addEventListener('click', () => this.hide());
+        this.overlay.querySelector('#model-select')!.addEventListener('change', (e: any) => {
+            document.dispatchEvent(new CustomEvent('llm-provider-changed', {
+                detail: { provider: e.target.value }
+            }));
+        });
     }
 
     public getElement(): HTMLElement {

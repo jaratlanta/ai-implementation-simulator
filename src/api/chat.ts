@@ -59,12 +59,12 @@ export interface MessageResponse {
     gear?: number;
 }
 
-export async function sendMessage(sessionId: string, message: string, source: 'typed' | 'quick_reply' = 'typed'): Promise<MessageResponse | null> {
+export async function sendMessage(sessionId: string, message: string, source: 'typed' | 'quick_reply' = 'typed', provider?: string): Promise<MessageResponse | null> {
     try {
         const response = await fetch(`${API_URL}/chat/${sessionId}/message`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, source })
+            body: JSON.stringify({ message, source, provider })
         });
         if (!response.ok) throw new Error(`Failed to send message: ${response.status}`);
         return await response.json();
