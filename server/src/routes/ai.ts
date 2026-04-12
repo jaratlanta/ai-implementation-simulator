@@ -12,14 +12,14 @@ const router = Router();
  */
 router.post('/generate-text', async (req: Request, res: Response) => {
     try {
-        const { prompt, systemPrompt, provider, jsonMode } = req.body;
+        const { prompt, systemPrompt, provider, jsonMode, temperature, maxTokens } = req.body;
 
         if (!prompt) {
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
         console.log(`[AI] Text generation request (provider: ${provider || 'default'})`);
-        const result = await llmService.generateText(prompt, systemPrompt, { provider, jsonMode });
+        const result = await llmService.generateText(prompt, systemPrompt, { provider, jsonMode, temperature, maxTokens });
 
         if (!result.success) {
             return res.status(500).json({ error: result.error || 'Failed to generate text' });

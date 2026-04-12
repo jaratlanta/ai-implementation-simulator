@@ -47,7 +47,7 @@ export class ProgressBar {
             } else if (phase === this.currentGear) {
                 const stepIdx = steps.indexOf(this.currentPhase);
                 if (stepIdx >= 0) {
-                    fillPct = ((stepIdx + 1) / steps.length) * 100;
+                    fillPct = Math.max(5, (stepIdx / steps.length) * 100);
                 }
             }
 

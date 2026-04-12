@@ -32,7 +32,9 @@ export async function callLLM(payload: LLMPayload): Promise<LLMResponse> {
                 prompt: payload.prompt,
                 systemPrompt: payload.systemPrompt,
                 provider: payload.provider,
-                jsonMode: payload.jsonMode
+                jsonMode: payload.jsonMode,
+                maxTokens: payload.maxTokens,
+                temperature: payload.temperature
             })
         });
 

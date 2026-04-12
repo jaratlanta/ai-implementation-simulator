@@ -129,6 +129,7 @@ export class ChatScreen {
     private reportModal: ReportModal;
     private messageSource: 'typed' | 'quick_reply' = 'typed';
     private activeReportPhase: number | null = null;
+    private hasCongratulated: boolean = false;
 
     // Default scene carousel
     private defaultScenes: string[] = [];
@@ -416,18 +417,19 @@ export class ChatScreen {
 
     private getPhaseHtml(phase: number): string {
         let pattern: RegExp | null = null;
-        if (phase === 1) pattern = /DISCOVERY BRIEF/i;
-        else if (phase === 2) pattern = /STRATEGY BRIEF/i;
-        else if (phase === 3) pattern = /IMPLEMENTATION PLAN/i;
+        if (phase === 1) pattern = /(?:\n|^)(?:\*\*|#+)\s*(?:AI\s+)?DISCOVERY BRIEF/i;
+        else if (phase === 2) pattern = /(?:\n|^)(?:\*\*|#+)\s*(?:AI\s+)?STRATEGY BRIEF/i;
+        else if (phase === 3) pattern = /(?:\n|^)(?:\*\*|#+)\s*(?:AI\s+)?IMPLEMENTATION PLAN/i;
 
         if (pattern) {
             const msgs = [...this.chatHistory].reverse();
             for (const msg of msgs) {
-                if (msg.role === 'assistant' && pattern.test(msg.content)) {
-                    let text = msg.content;
+                const matchIndex = msg.content.search(pattern);
+                if (msg.role === 'assistant' && matchIndex !== -1) {
+                    let text = msg.content.substring(matchIndex);
                     // Strip the closing conversational hook usually added by the prompts
-                    text = text.replace(/Now let's move into.*?\bReady\?/gi, '');
-                    text = text.replace(/Now let's move to Implementation.*?\bReady\?/gi, '');
+                    text = text.replace(/Now let's move into.*\bReady\?/gis, '');
+                    text = text.replace(/Now let's move to Implementation.*\bReady\?/gis, '');
                     
                     return `
                         <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(255,255,255,0.9); padding: clamp(1rem, 5vw, 2.5rem) clamp(1rem, 5vw, 3rem); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-family: 'Inter', sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; margin-bottom: 2rem;">
@@ -981,6 +983,10 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
 
             // Generate quick reply suggestions in background
             this.generateQuickReplies(owlResponse);
+
+            if (/(?:\n|^)(?:\*\*|#+)\s*(?:AI\s+)?IMPLEMENTATION PLAN/i.test(owlResponse) && !this.hasCongratulated) {
+                this.triggerCongratulations();
+            }
         } else {
             const fallbackMsg = "Our owls are resting for a moment. Could you try that again?";
             this.chatHistory.push({ role: 'assistant', content: fallbackMsg, timestamp: new Date().toISOString(), agent_id: this.currentAgent });
@@ -991,6 +997,36 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
         chatInput.focus();
 
         this.startSceneImageCycle();
+    }
+
+    private triggerCongratulations() {
+        this.hasCongratulated = true;
+        setTimeout(() => {
+            const congratsHtml = `
+                <div style="text-align: center; margin-bottom: 0.5rem; padding: 0.5rem;">
+                    <video src="/brand/poly-animated-fly.mp4" autoplay loop muted playsinline style="width: 100%; max-width: 250px; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid rgba(96, 203, 232, 0.3);"></video>
+                    <h3 style="color: var(--color-true-blue); font-family: var(--font-display); margin: 0 0 0.5rem 0; font-size: 1.2rem;">Congratulations on completing your Strategy! 🚀</h3>
+                    <p style="margin: 0; font-size: 0.95rem; line-height: 1.5; color: #1a1a2e;">Your formal AI Implementation Plan is ready. Click the report button in the upper right corner to view, copy, or download it as a PDF.</p>
+                </div>
+            `;
+            
+            // Push an unformatted text version to history (for reports if needed) but not really necessary for UI render
+            this.chatHistory.push({ role: 'assistant', content: "Congratulations! The AI Implementation Plan is ready.", timestamp: new Date().toISOString(), agent_id: 'poly' });
+            
+            const messagesContainer = this.element.querySelector('#chat-messages') as HTMLElement;
+            if (!messagesContainer) return;
+            
+            const row = document.createElement('div');
+            row.className = 'message-row owl';
+            row.innerHTML = `
+                <img src="/brand/owl-icon.png" alt="Poly" class="message-avatar" style="border: 2px solid var(--color-sky-blue);" />
+                <div class="message-bubble owl" style="border: 1px solid rgba(96, 203, 232, 0.5); box-shadow: 0 4px 20px rgba(96, 203, 232, 0.15);">
+                    ${congratsHtml}
+                </div>
+            `;
+            messagesContainer.appendChild(row);
+            requestAnimationFrame(() => { messagesContainer.scrollTop = messagesContainer.scrollHeight; });
+        }, 2000);
     }
 
     /**

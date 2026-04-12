@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <style>
     /* === MEANINGFUL AI DESIGN SYSTEM === */
     :root {
@@ -145,7 +148,7 @@
     .progress-phase-header { display: flex; align-items: center; gap: 0.3rem; }
     .progress-phase-icon { font-size: 0.7rem; }
     .progress-phase-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); }
-    .progress-phase.current .progress-phase-label { font-weight: 700; }
+    .progress-phase.current .progress-phase-label { font-weight: 700; color: var(--color-sky-blue); }
     .progress-track { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
     .progress-fill { height: 100%; background: var(--color-true-blue); border-radius: 2px; transition: width 0.6s ease; }
     .progress-phase.current .progress-fill { background: var(--color-sky-blue); box-shadow: 0 0 6px rgba(96, 203, 232, 0.4); }
