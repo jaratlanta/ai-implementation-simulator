@@ -9,6 +9,7 @@ export interface LLMPayload {
     maxTokens?: number;
     temperature?: number;
     jsonMode?: boolean;
+    provider?: string;
 }
 
 export interface LLMResponse {
@@ -30,6 +31,8 @@ export async function callLLM(payload: LLMPayload): Promise<LLMResponse> {
             body: JSON.stringify({
                 prompt: payload.prompt,
                 systemPrompt: payload.systemPrompt,
+                provider: payload.provider,
+                jsonMode: payload.jsonMode
             })
         });
 

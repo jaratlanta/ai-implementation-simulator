@@ -4,19 +4,25 @@
  */
 console.log("------------------ SERVER STARTING ------------------");
 import dotenv from 'dotenv';
-// Use override: true because Claude Desktop injects empty ANTHROPIC_API_KEY into the shell
-dotenv.config({ override: true });
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load root .env first (where VITE_OPENAI_API_KEY lives)
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
+// Then load local server/.env
+dotenv.config({ override: true });
+
 import chatRoutes from './routes/chat.js';
 import aiRoutes from './routes/ai.js';
 import { closePool } from './db/index.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
 
 const app = express();
 const PORT = process.env.PORT || 7811;
@@ -44,7 +50,8 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json({ limit: '50mb' }));
+// Reduced from 50mb to 5mb to prevent RAM exhaustion from 50 concurrent users
+app.use(express.json({ limit: '5mb' }));
 
 // Request logging in development
 if (process.env.NODE_ENV === 'development') {

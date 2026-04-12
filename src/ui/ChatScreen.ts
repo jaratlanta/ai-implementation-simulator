@@ -90,6 +90,7 @@ interface ChatScreenOptions {
     currentPhase?: string;
     path?: string;
     capOnly?: boolean;
+    llmProvider?: string;
 }
 
 /** AI Glossary — terms the owls use that get expandable definitions */
@@ -210,57 +211,6 @@ export class ChatScreen {
     }
 
     /**
-     * Load cached default scenes or generate new ones in background.
-     * Shows each scene as it completes — doesn't wait for all 6.
-     */
-    private async loadDefaultScenes() {
-        // Clear any stale localStorage cache from earlier versions
-        try { localStorage.removeItem(SCENE_CACHE_KEY); } catch {}
-
-        this.defaultScenesGenerating = true;
-        this.defaultScenes = new Array(1).fill('');
-
-        // 1. Show a previously cached scene IMMEDIATELY (if available from IndexedDB)
-        const cachedScene = await loadSceneFromIDB('owl_atlanta_0');
-        if (cachedScene) {
-            this.defaultScenes[0] = cachedScene;
-            this.showDefaultScene(0);
-            console.log('[ChatScreen] Showing cached Atlanta scene instantly');
-        } else {
-            console.log('[ChatScreen] Generating default scene...');
-            try {
-                const config: any = {
-                    prompt: DEFAULT_SCENE_PROMPTS[0],
-                    style: ART_STYLES['3d-storybook'],
-                    width: 1024, height: 1024,
-                    aspectRatio: '1:1',
-                    provider: 'gemini-2.5-flash-upload'
-                };
-                if (this.owlRef) {
-                    config.referenceImages = [{
-                        base64: this.owlRef.base64,
-                        mimeType: this.owlRef.mimeType,
-                        description: 'Reference: The Meaningful AI owl mascot — this is exactly what the owl character should look like in the scene'
-                    }];
-                }
-                const result = await (window as any).imageGenerator.generate(config);
-                if (result.url) {
-                    this.defaultScenes[0] = result.url;
-                    this.showDefaultScene(0);
-                    saveSceneToIDB('owl_atlanta_0', result.url);
-                }
-            } catch (err) {
-                console.warn(`[ChatScreen] Default scene failed:`, err);
-            }
-        }
-
-        this.defaultScenesGenerating = false;
-        
-        // Immediately start loading a new image that includes the user avatar
-        this.startSceneImageCycle();
-    }
-
-    /**
      * Insert a scene image inline in the chat messages (for mobile).
      * On desktop this is a no-op — scenes go in the scene panel.
      */
@@ -295,21 +245,9 @@ export class ChatScreen {
 
         // Desktop: update the scene panel
         const sceneImageEl = this.element.querySelector('#scene-image') as HTMLImageElement;
-        const splashEl = this.element.querySelector('#scene-splash') as HTMLElement;
         if (!sceneImageEl) return;
 
-        if (splashEl && splashEl.style.display !== 'none') {
-            splashEl.style.transition = 'opacity 0.8s ease';
-            splashEl.style.opacity = '0';
-            setTimeout(() => {
-                splashEl.style.display = 'none';
-                sceneImageEl.style.display = '';
-                sceneImageEl.src = this.defaultScenes[index];
-                sceneImageEl.style.opacity = '1';
-            }, 800);
-        } else {
-            crossfadeImage(sceneImageEl, this.defaultScenes[index]);
-        }
+        crossfadeImage(sceneImageEl, this.defaultScenes[index]);
     }
 
     private startDefaultSceneCarousel() {
@@ -359,7 +297,7 @@ export class ChatScreen {
         if (phase === 3) { owlName = 'Implementation'; owlRole = 'Phase 3'; owlColor = '#E83151'; }
 
         const owlAvatar = this.getOwlAvatar();
-        const splashImages = ['/owl-scenes/splash-1.png', '/owl-scenes/splash-2.png', '/owl-scenes/splash-3.png'];
+        const splashImages = ['/owl-scenes/splash-1.png', '/owl-scenes/splash-2.png', '/owl-scenes/splash-3.png', '/owl-scenes/splash-4.png'];
         const randomSplash = splashImages[Math.floor(Math.random() * splashImages.length)];
 
         this.element.innerHTML = `
@@ -382,11 +320,11 @@ export class ChatScreen {
                         <span id="owl-header-role" style="display:none;">${owlRole}</span>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <button id="download-report-btn" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.7rem; border-color: rgba(255,255,255,0.3); color: white; border-radius: var(--radius-sm); border-width: 1px; display: flex; align-items: center; gap: 0.3rem;" title="Download Full Report">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            DOWNLOAD REPORT
+                        <button id="download-report-btn" class="btn btn-outline" style="height: 32px; padding: 0 0.75rem; font-size: 0.7rem; border-color: rgba(255,255,255,0.3); color: white; border-radius: var(--radius-sm); border-width: 1px; display: flex; align-items: center; justify-content: center; gap: 0.4rem; white-space: nowrap;" title="View AI Implementation Plan">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            AI IMPLEMENTATION PLAN
                         </button>
-                        <button id="reset-btn" class="reset-btn" title="Start over">
+                        <button id="reset-btn" class="reset-btn" style="height: 32px; width: 32px; flex-shrink: 0;" title="Start over">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                         </button>
                     </div>
@@ -464,6 +402,12 @@ export class ChatScreen {
 
         document.addEventListener('llm-provider-changed', (e: any) => {
             this.options.llmProvider = e.detail.provider;
+        });
+
+        document.addEventListener('image-provider-changed', (e: any) => {
+            if ((window as any).imageGenerator) {
+                (window as any).imageGenerator.setProvider(e.detail.provider);
+            }
         });
 
         // Report modal
@@ -580,82 +524,142 @@ export class ChatScreen {
 `;
         }
 
-        // Look for the official readout/brief generated by the Owl in the chat
-        const briefKeywords = ['', 'Discovery Brief', 'Strategy Brief', 'Implementation Plan'];
-        const keyword = briefKeywords[phase];
-        
-        let officialBriefFound = false;
-        let officialBriefHtml = '';
-        
-        const briefMessage = this.chatHistory.slice().reverse().find(m => m.role === 'assistant' && (m.content.includes(keyword) || m.content.includes(keyword.toUpperCase())));
-        
-        if (briefMessage) {
-            let markdown = briefMessage.content;
-            // The brief usually starts after a horizontal rule "---"
-            const splitMatch = markdown.match(/---[\s\S]*?(?=\n\nNow let's move|\n\nDoes this|\n\nWould you|$)/);
-            if (splitMatch) {
-                markdown = splitMatch[0].replace(/^---+/, '').trim();
-            } else {
-                // fallback to the whole message if no --- found, minus some intro lines
-                markdown = markdown.substring(markdown.indexOf(keyword) > -1 ? markdown.indexOf(keyword) : 0);
-            }
-            if (markdown.length > 50) {
-                officialBriefFound = true;
-                
-                let themeGradient = 'linear-gradient(135deg, #1e293b, #0f172a)';
-                let themeColor = '#38bdf8';
-                if (phase === 2) { themeGradient = 'linear-gradient(135deg, #1e1b4b, #3b0764)'; themeColor = '#c084fc'; }
-                if (phase === 3) { themeGradient = 'linear-gradient(135deg, #064e3b, #022c22)'; themeColor = '#34d399'; }
-
-                officialBriefHtml = `
-<div class="report-template" style="color: white; font-family: 'Inter', sans-serif;">
-  <div style="background: ${themeGradient}; padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
-         <h1 style="color: ${themeColor}; margin: 0; font-size: 1.8rem; letter-spacing: -0.5px;">${title}</h1>
-         <span style="background: ${themeColor}33; color: ${themeColor}; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">Phase ${phase} Finalized</span>
-     </div>
-     <div class="official-brief-content" style="font-size: 1.05rem; line-height: 1.6; color: rgba(255,255,255,0.9);">
-         ${this.parseMarkdown(markdown)}
-     </div>
-  </div>
-</div>`;
-            }
-        }
-
-        if (officialBriefFound) {
-            html = officialBriefHtml;
-        }
-
         return html;
+    }
+
+    private getCtaHtml(): string {
+        return `
+            <div style="margin-top: 2.5rem; background: rgba(0,0,0,0.25); padding: 2rem; border-radius: 8px; border-top: 4px solid #38bdf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: 'Inter', sans-serif;">
+                <h3 style="color: #f8fafc; font-size: 1.25rem; margin-top: 0; margin-bottom: 1rem;">The Bigger Picture &amp; Next Steps</h3>
+                <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 1rem;">
+                    This AI use case is just one example. Ultimately, there are dozens, if not hundreds, of use cases for AI across your entire organization. Working with an AI implementation consultant at Meaningful AI helps you identify the use cases with the highest ROI&mdash;separating the quick wins from the long-term strategic bets.
+                </p>
+                <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                    Every single month, we work together to transform your company into an AI-enabled leader. Some of these use cases are major wins, while others are incremental wins that open up time and budget for the bigger, long-term strategic bets. Crucially, rolling out these tools requires a qualified implementation team to manage governance, mitigate security risks, and protect your company's proprietary data against emerging threats.
+                </p>
+                <div style="background: rgba(56, 189, 248, 0.1); padding: 1rem 1.5rem; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.2); display: inline-block;">
+                    <p style="color: #e2e8f0; font-size: 1.05rem; font-weight: 500; margin: 0;">
+                        <strong>Ready to start?</strong> Visit us at <a href="https://bemeaningful.ai" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600;">bemeaningful.ai</a> or email us at <a href="mailto:hello@bemeaningful.ai" style="color: #38bdf8; text-decoration: none; font-weight: 600;">hello@bemeaningful.ai</a>.
+                    </p>
+                </div>
+            </div>
+        `;
     }
 
     private async showPhaseReport(phase: number) {
         this.activeReportPhase = phase;
         const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
         const title = `${phaseNames[phase]} Document`;
-        const html = this.getPhaseHtml(phase);
+        let html = this.getPhaseHtml(phase);
+        
+        if (!html.includes('The Bigger Picture &amp; Next Steps') && !html.includes('The Bigger Picture & Next Steps')) {
+            html += this.getCtaHtml();
+        }
 
         if (this.reportModal.getElement().classList.contains('visible') && this.activeReportPhase === phase) {
             this.reportModal.updateContent(html);
         } else {
-            this.reportModal.show(title, html);
+            this.reportModal.show(title, html, () => this.handleRegeneratePhaseReport(phase));
         }
     }
 
     private async showFullReport() {
         this.activeReportPhase = null;
-        let fullHtml = `
+        
+        const cacheKey = `ais_full_report_${this.options.sessionId}`;
+        const cachedHtml = localStorage.getItem(cacheKey);
+
+        let fullHtml = cachedHtml || `
 <div style="display:flex; flex-direction:column; gap: 2rem;">
   ${this.getPhaseHtml(1)}
   ${this.getPhaseHtml(2)}
   ${this.getPhaseHtml(3)}
 </div>`;
-        this.reportModal.show("Meaningful AI - Full Implementation Report", fullHtml);
+
+        if (!fullHtml.includes('The Bigger Picture &amp; Next Steps') && !fullHtml.includes('The Bigger Picture & Next Steps')) {
+            fullHtml += this.getCtaHtml();
+        }
+
+        this.reportModal.show("Meaningful AI - Full Implementation Report", fullHtml, () => this.handleRegeneratePlan());
     }
 
-    private async updateReportDataInBackground() {
+    private async handleRegeneratePhaseReport(phase: number) {
+        this.reportModal.updateContent(`
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 6rem 2rem; color: #94a3b8; gap: 1.5rem; text-align: center; font-family: 'Inter', sans-serif;">
+                <video src="/brand/poly-animated.mp4" autoplay loop muted playsinline style="width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 8px 24px rgba(0,0,0,0.3); object-fit: cover; aspect-ratio: 1/1; border: 3px solid rgba(192, 132, 252, 0.4);"></video>
+                <div style="font-size: 1.3rem; margin-bottom: 0.5rem; color: white;">Analyzing Phase Insights...</div>
+                <div>Regenerating data for this specific phase from the latest conversation.<br>This may take a moment.</div>
+            </div>
+        `);
+
+        await this.updateReportDataInBackground(phase);
+    }
+
+    private async handleRegeneratePlan() {
+        this.reportModal.updateContent(`
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 6rem 2rem; color: #94a3b8; gap: 1.5rem; text-align: center; font-family: 'Inter', sans-serif;">
+                <video src="/brand/poly-animated.mp4" autoplay loop muted playsinline style="width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 8px 24px rgba(0,0,0,0.3); object-fit: cover; aspect-ratio: 1/1; border: 3px solid rgba(56, 189, 248, 0.4);"></video>
+                <div style="font-size: 1.3rem; margin-bottom: 0.5rem; color: white;">Synthesizing Chat History...</div>
+                <div>Generating comprehensive implementation plan.<br>This may take 15-30 seconds.</div>
+            </div>
+        `);
+
+        const systemPrompt = `You are an expert AI implementation strategist.
+Your task is to generate a beautiful, comprehensive AI Implementation Plan based ONLY on the provided chat history.
+Format the plan elegantly using Markdown. Include well-structured headings, bullet points, and tables where appropriate (like Executive Summary, Expected ROI, Architecture, Roles, Roadmap, Investment).
+Do not add any conversational filler. Just the polished Markdown report.`;
+
+        const userPrompt = `CONVERSATION CONTEXT:
+${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n')}
+
+Generate the complete AI Implementation Plan.`;
+
+        try {
+            const res = await callLLM({ 
+                systemPrompt: systemPrompt,
+                prompt: userPrompt,
+                temperature: 0.4,
+                maxTokens: 3000,
+                provider: this.options.llmProvider
+            });
+
+            if (res.success && res.content) {
+                const htmlContent = `
+                    <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(255,255,255,0.9); padding: 2.5rem 3rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-family: 'Inter', sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto;">
+                        <style>
+                            .regenerated-report h1, .regenerated-report h2, .regenerated-report h3 { color: #38bdf8; margin-top: 2rem; margin-bottom: 1rem; }
+                            .regenerated-report h1 { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem; font-size: 2.2rem; }
+                            .regenerated-report h2 { font-size: 1.5rem; color: #818cf8; }
+                            .regenerated-report table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+                            .regenerated-report th, .regenerated-report td { border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem 1rem; text-align: left; }
+                            .regenerated-report th { background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+                            .regenerated-report ul, .regenerated-report ol { padding-left: 1.5rem; margin: 1rem 0; }
+                            .regenerated-report li { margin-bottom: 0.5rem; }
+                            .regenerated-report p { margin: 1rem 0; }
+                            .regenerated-report strong { color: white; }
+                            .regenerated-report em { color: #cbd5e1; }
+                        </style>
+                        <div class="regenerated-report">
+                            ${this.parseMarkdown(res.content)}
+                            ${this.getCtaHtml()}
+                        </div>
+                    </div>
+                `;
+                const cacheKey = `ais_full_report_${this.options.sessionId}`;
+                localStorage.setItem(cacheKey, htmlContent);
+                this.reportModal.updateContent(htmlContent);
+            } else {
+                this.reportModal.updateContent(`<div style="color:#ef4444; padding: 2rem; text-align:center;">Failed to generate plan. Please try again.</div>`);
+            }
+        } catch (e) {
+            console.error('[ChatScreen] Error generating plan', e);
+            this.reportModal.updateContent(`<div style="color:#ef4444; padding: 2rem; text-align:center;">Error generating plan. Check console.</div>`);
+        }
+    }
+
+    private async updateReportDataInBackground(targetPhase?: number) {
         const gear = this.options.currentGear || 1;
-        const phase = Math.floor(gear);
+        const phase = targetPhase !== undefined ? targetPhase : Math.floor(gear);
         if (phase < 1 || phase > 3) return;
         
         if (this.chatHistory.length < 2) return;
@@ -679,21 +683,36 @@ CONVERSATION CONTEXT:
 ${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').slice(-4000)}`;
 
         try {
-            const res = await callLLM({ prompt, temperature: 0.1, jsonMode: true });
+            const res = await callLLM({ 
+                prompt, 
+                temperature: 0.1, 
+                jsonMode: true,
+                provider: this.options.llmProvider
+            });
             if (res.success && res.content) {
                 let parsed = null;
                 try {
                     parsed = JSON.parse(res.content);
                 } catch {
-                     const cleaned = res.content.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
-                     parsed = JSON.parse(cleaned);
+                    try {
+                        const jsonMatch = res.content.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            parsed = JSON.parse(jsonMatch[0]);
+                        }
+                    } catch (e) {
+                        console.error('[ChatScreen] Failed to parse report JSON data:', e);
+                    }
                 }
                 if (parsed) {
                     const cacheKey = `ais_report_data_${this.options.sessionId}_${phase}`;
                     localStorage.setItem(cacheKey, JSON.stringify(parsed));
                     
-                    if (this.activeReportPhase === phase && this.reportModal.getElement().classList.contains('visible')) {
-                        this.showPhaseReport(phase);
+                    if (this.reportModal.getElement().classList.contains('visible')) {
+                        if (this.activeReportPhase === phase) {
+                            this.showPhaseReport(phase);
+                        } else if (this.activeReportPhase === null) {
+                            this.showFullReport();
+                        }
                     }
                 }
             }
@@ -768,15 +787,15 @@ ${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').slice(-4000)}`
             const visualPrompt = await extractSceneDescription(
                 this.options.playerName, playerDescription,
                 this.chatHistory, this.currentAgent,
-                !hasPlayerAvatar  // owlOnly = true if no player avatar
+                !hasPlayerAvatar, // owlOnly = true if no player avatar
+                this.options.llmProvider
             );
 
             const config: any = {
                 prompt: visualPrompt,
                 style: ART_STYLES['3d-storybook'],
                 width: 1024, height: 1024,
-                aspectRatio: '1:1',
-                provider: 'gemini-2.5-flash-upload'
+                aspectRatio: '1:1'
             };
 
             // Build reference images array — player + owl
@@ -810,19 +829,7 @@ ${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').slice(-4000)}`
                 this.insertInlineChatImage(generatedImage.url);
             } else {
                 // Desktop: update the scene panel
-                const splashEl = this.element.querySelector('#scene-splash') as HTMLElement;
-                if (splashEl && splashEl.style.display !== 'none') {
-                    splashEl.style.transition = 'opacity 0.8s ease';
-                    splashEl.style.opacity = '0';
-                    setTimeout(() => {
-                        splashEl.style.display = 'none';
-                        sceneImageEl.style.display = '';
-                        sceneImageEl.src = generatedImage.url;
-                        sceneImageEl.style.opacity = '1';
-                    }, 800);
-                } else {
-                    await crossfadeImage(sceneImageEl, generatedImage.url);
-                }
+                await crossfadeImage(sceneImageEl, generatedImage.url);
             }
         } catch (err) {
             console.error('[ChatScreen] Scene image generation failed:', err);
@@ -879,16 +886,27 @@ CRITICAL RULES:
 
 Example output: ["Yes, about 20 people","We handle most things manually","Can you explain more?"]`;
 
-            const result = await callLLM({ prompt, temperature: 0.7, maxTokens: 100, jsonMode: true });
+            const result = await callLLM({ prompt, temperature: 0.7, maxTokens: 100, jsonMode: true, provider: this.options.llmProvider });
 
             if (result.success && result.content) {
                 try {
-                    const replies = JSON.parse(result.content);
-                    if (Array.isArray(replies) && replies.length > 0) {
-                        this.renderQuickReplies(replies.slice(0, 3));
+                    let parsed = null;
+                    try {
+                        parsed = JSON.parse(result.content);
+                    } catch {
+                        // Resilient stripping: extract only the JSON array block natively regardless of surrounding markdown
+                        const match = result.content.match(/\[[\s\S]*\]/);
+                        if (match) {
+                            parsed = JSON.parse(match[0]);
+                        } else {
+                            throw new Error("No array found");
+                        }
+                    }
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        this.renderQuickReplies(parsed.slice(0, 3));
                     }
                 } catch {
-                    console.warn('[ChatScreen] Failed to parse quick replies');
+                    console.warn('[ChatScreen] Failed to parse quick replies', result.content);
                 }
             }
         } catch (err) {
@@ -1217,8 +1235,8 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
         // Load owl brand reference BEFORE scene generation so it's always available
         await this.prepareOwlReference();
 
-        // Start loading default Atlanta owl scenes
-        this.loadDefaultScenes();
+        // Start loading the personalized image scene cycle immediately
+        this.startSceneImageCycle();
 
         if (this.options.existingHistory && this.options.existingHistory.length > 0) {
             this.loadHistory(this.options.existingHistory);

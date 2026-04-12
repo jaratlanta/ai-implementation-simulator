@@ -86,6 +86,43 @@ router.get('/sessions/list', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /chat/toolset-status
+ * Returns live status of all 6 AI toolsets for the info panel
+ */
+router.get('/toolset-status', async (_req: Request, res: Response) => {
+    try {
+        // Check RAG status
+        let ragStatus = { status: 'inactive', chunks: 0, withEmbeddings: 0 };
+        try {
+            const result = await (await import('../db/index.js')).query(
+                `SELECT COUNT(*) as total, COUNT(embedding) as with_emb FROM content_chunks`
+            );
+            const row = result.rows[0];
+            ragStatus = {
+                status: parseInt(row.with_emb) > 0 ? 'active' : 'inactive',
+                chunks: parseInt(row.total),
+                withEmbeddings: parseInt(row.with_emb),
+            };
+        } catch {}
+
+        // RL signal count
+        const signalCount = await getSignalCount();
+
+        res.json({
+            rag: ragStatus,
+            conversational: { status: 'active', agents: 5, provider: 'anthropic+gemini' },
+            imageGen: { status: 'active', provider: 'gemini-flash' },
+            mcp: { status: 'active', tools: 3 },
+            rl: { status: signalCount > 0 ? 'active' : 'collecting', signals: signalCount },
+            vibeCoding: { status: 'active' },
+        });
+    } catch (error: any) {
+        console.error('[Toolset] Status error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+/**
  * GET /chat/:id
  */
 router.get('/:id', async (req: Request, res: Response) => {
@@ -288,7 +325,7 @@ router.post('/:id/message', async (req: Request, res: Response) => {
         const turnsInPhase = (sessionData.phase_turn_count || 0) + 1; // +1 for this message
 
         // Check for summary/report keywords — jump to final plan
-        const summaryKeywords = /\b(summary|report|wrap up|final plan|generate plan|finish|done|let'?s wrap)\b/i;
+        const summaryKeywords = /\b(summary|report|wrap up|final plan|generate plan|finish|done|let'?s wrap|recreate plan|regenerate|remake|make|redo)\b/i;
         const currentPhase = session.current_phase || '1.1';
 
         let routing;
@@ -307,7 +344,8 @@ router.post('/:id/message', async (req: Request, res: Response) => {
                 currentPhase,
                 currentAgent,
                 session.path || 'discovery',
-                turnsInPhase
+                turnsInPhase,
+                provider
             );
         }
 
@@ -389,7 +427,7 @@ router.post('/:id/message', async (req: Request, res: Response) => {
 
         let owlResponse = result.success
             ? result.content
-            : `That's a great point. Can you tell me a bit more about that?`;
+            : `[API Error - ${activeAgent}] Failed to connect to ${provider || 'default'} model. Reason: ${result.error}`;
 
         // Update chat history
         const updatedHistory = [
@@ -471,41 +509,5 @@ router.post('/:id/feedback', async (req: Request, res: Response) => {
     }
 });
 
-/**
- * GET /ai/toolset-status
- * Returns live status of all 6 AI toolsets for the info panel
- */
-router.get('/toolset-status', async (_req: Request, res: Response) => {
-    try {
-        // Check RAG status
-        let ragStatus = { status: 'inactive', chunks: 0, withEmbeddings: 0 };
-        try {
-            const result = await (await import('../db/index.js')).query(
-                `SELECT COUNT(*) as total, COUNT(embedding) as with_emb FROM content_chunks`
-            );
-            const row = result.rows[0];
-            ragStatus = {
-                status: parseInt(row.with_emb) > 0 ? 'active' : 'inactive',
-                chunks: parseInt(row.total),
-                withEmbeddings: parseInt(row.with_emb),
-            };
-        } catch {}
-
-        // RL signal count
-        const signalCount = await getSignalCount();
-
-        res.json({
-            rag: ragStatus,
-            conversational: { status: 'active', agents: 5, provider: 'anthropic+gemini' },
-            imageGen: { status: 'active', provider: 'gemini-flash' },
-            mcp: { status: 'active', tools: 3 },
-            rl: { status: signalCount > 0 ? 'active' : 'collecting', signals: signalCount },
-            vibeCoding: { status: 'active' },
-        });
-    } catch (error: any) {
-        console.error('[Toolset] Status error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
 
 export default router;

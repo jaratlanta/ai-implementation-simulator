@@ -22,12 +22,20 @@ export class ReportModal {
     /**
      * Show the modal with a report title and HTML content
      */
-    public show(title: string, htmlContent: string) {
+    public show(title: string, htmlContent: string, onRegenerate?: () => void) {
+        const regenerateBtnHtml = onRegenerate ? `
+            <button class="report-regenerate-btn" title="Regenerate Plan from Chat History" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 0.4rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s ease;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 3.87-11.1l4 2.53"/></svg>
+                <span>REGENERATE PLAN</span>
+            </button>
+        ` : '';
+
         this.overlay.innerHTML = `
             <div class="report-modal">
                 <div class="report-modal-header">
                     <h2>${title}</h2>
                     <div class="report-modal-actions">
+                        ${regenerateBtnHtml}
                         <button class="report-copy-btn" title="Copy to clipboard">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                             <span>Copy</span>
@@ -44,6 +52,12 @@ export class ReportModal {
 
         this.overlay.querySelector('.report-close-btn')!.addEventListener('click', () => this.hide());
         this.overlay.querySelector('.report-copy-btn')!.addEventListener('click', () => this.copyToClipboard());
+        
+        if (onRegenerate) {
+            this.overlay.querySelector('.report-regenerate-btn')?.addEventListener('click', () => {
+                onRegenerate();
+            });
+        }
 
         this.overlay.style.display = 'flex';
         requestAnimationFrame(() => this.overlay.classList.add('visible'));

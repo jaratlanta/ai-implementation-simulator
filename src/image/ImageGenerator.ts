@@ -798,19 +798,22 @@ class GrokAdapter implements ImageProviderAdapter {
 
     console.log(`[Grok] Generating, dimensions: ${width}x${height} (from aspect: ${aspectRatio || 'default'})`);
 
-    const response = await fetch('https://api.x.ai/v1/images/generations', {
+    // xAI does not yet publicly expose /v1/images/generations. Fall back to DALL-E to avoid 404s.
+    // We grab VITE_OPENAI_API_KEY from environment or fall back.
+    const openAIKey = import.meta.env.VITE_OPENAI_API_KEY || this.apiKey;
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
+        'Authorization': `Bearer ${openAIKey}`
       },
       body: JSON.stringify({
-        model: 'grok-2-image',
+        model: 'dall-e-3',
         prompt: fullPrompt,
         n: 1,
-        width,
-        height,
-        response_format: 'b64_json'
+        size: '1024x1024',
+        response_format: 'b64_json',
+        quality: 'standard'
       })
     });
 
@@ -2119,7 +2122,7 @@ class ComfyUIAdapter implements ImageProviderAdapter {
 export class ImageGenerator {
   private adapter: ImageProviderAdapter | null = null;
   private currentProvider: ImageProvider | null = null;
-  private activeProvider: ImageProvider = 'imagen-4.0';
+  private activeProvider: ImageProvider = 'gemini-2.5-flash';
   private configs: Map<ImageProvider, string> = new Map();
   private generationCount: number = 0;
   private pauseAfterCount: number = 12;
@@ -2170,6 +2173,7 @@ export class ImageGenerator {
       case 'gptimage-upload':
         this.adapter = new GPTImageAdapter(apiKey, 'upload');
         break;
+      case 'openai':
       case 'gpt4o':
         this.adapter = new GPT4oImageAdapter(apiKey);
         break;
@@ -2184,14 +2188,17 @@ export class ImageGenerator {
         break;
       case 'gemini':
       case 'gemini-2.0-flash':
-        this.adapter = new GeminiImageAdapter(apiKey, 'none', 'gemini-2.5-flash-image', 'gemini');
+      case 'gemini-2.5-flash':
+        this.adapter = new GeminiImageAdapter(apiKey, 'upload', 'gemini-2.5-flash-image', 'gemini');
         break;
       case 'gemini-url':
       case 'gemini-2.0-flash-url':
+      case 'gemini-2.5-flash-url':
         this.adapter = new GeminiImageAdapter(apiKey, 'url', 'gemini-2.5-flash-image', 'gemini-url');
         break;
       case 'gemini-upload':
       case 'gemini-2.0-flash-upload':
+      case 'gemini-2.5-flash-upload':
         this.adapter = new GeminiImageAdapter(apiKey, 'upload', 'gemini-2.5-flash-image', 'gemini-upload');
         break;
       case 'gemini-files':
@@ -2440,6 +2447,15 @@ export class ImageGenerator {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const result = await currentAdapter.generate(mergedRequest);
+
+        // Notify backend terminal about the generation
+        try {
+            fetch(`${import.meta.env.VITE_API_URL || ''}/ai/log`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: `[ImageGen] Model: ${request.provider || this.currentProvider} | Prompt: ${request.prompt}` })
+            }).catch(() => {});
+        } catch (e) {}
 
         // Increment generation count on successful generation
         this.generationCount++;

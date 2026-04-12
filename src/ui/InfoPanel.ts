@@ -24,14 +24,21 @@ const TOOLSETS = [
         icon: '🦉',
         title: 'Multi-Agent Conversational AI',
         description: '5 specialized owl agents with LLM-driven phase routing. Claude primary, Gemini fallback. Each owl has domain expertise and personality.',
-        detail: (s: any) => s?.agents ? `${s.agents} agents, ${s.provider}` : '',
+        detail: (s: any) => {
+            const el = document.getElementById('model-select') as HTMLSelectElement;
+            const p = el ? el.options[el.selectedIndex].text : 'Active';
+            return s?.agents ? `${s.agents} agents, ${p}` : '';
+        },
     },
     {
         key: 'imageGen',
         icon: '🎨',
         title: 'GenAI Image Generation',
         description: 'Real-time scene generation using Gemini Flash with 3D owl reference images. Scenes and avatars generated live during the workshop.',
-        detail: (s: any) => s?.provider || '',
+        detail: (s: any) => {
+            const el = document.getElementById('image-model-select') as HTMLSelectElement;
+            return el ? el.options[el.selectedIndex].text : 'Active';
+        },
     },
     {
         key: 'mcp',
@@ -78,17 +85,7 @@ export class InfoPanel {
                 <h2 class="info-panel-title">Built with 6 AI Technologies</h2>
                 <p class="info-panel-subtitle">This isn't just a chatbot — it's a working showcase of modern AI toolsets.</p>
                 
-                <div style="background: rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-                    <label style="font-weight: 600; font-size: 0.9rem; color: white; display: flex; align-items: center; gap: 0.5rem;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        Model Engine
-                    </label>
-                    <select id="model-select" style="background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.4rem 0.6rem; font-size: 0.85rem; cursor: pointer; min-width: 160px; outline: none;">
-                        <option value="anthropic">Anthropic Claude</option>
-                        <option value="openai">OpenAI GPT-4o</option>
-                        <option value="gemini">Google Gemini</option>
-                    </select>
-                </div>
+
                 <div class="toolset-grid">
                     ${TOOLSETS.map(t => `
                         <div class="toolset-card" data-key="${t.key}">
@@ -100,6 +97,26 @@ export class InfoPanel {
                                 </div>
                                 <p>${t.description}</p>
                                 <span class="toolset-detail" data-detail="${t.key}"></span>
+                                ${t.key === 'conversational' ? `
+                                    <div style="margin-top: 0.75rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                                        <label style="font-size: 0.75rem; color: rgba(255,255,255,0.8); font-weight: 500; white-space: nowrap;">Model Engine:</label>
+                                        <select id="model-select" style="background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.2rem 0.4rem; font-size: 0.75rem; cursor: pointer; outline: none; max-width: 100%; text-overflow: ellipsis; flex: 1;">
+                                            <option value="anthropic">Anthropic Claude</option>
+                                            <option value="openai">OpenAI GPT-4o</option>
+                                            <option value="gemini">Google Gemini</option>
+                                        </select>
+                                    </div>
+                                ` : ''}
+                                ${t.key === 'imageGen' ? `
+                                    <div style="margin-top: 0.75rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                                        <label style="font-size: 0.75rem; color: rgba(255,255,255,0.8); font-weight: 500; white-space: nowrap;">Image Engine:</label>
+                                        <select id="image-model-select" style="background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.2rem 0.4rem; font-size: 0.75rem; cursor: pointer; outline: none; max-width: 100%; text-overflow: ellipsis; flex: 1;">
+                                            <option value="gemini">Google Gemini (Default)</option>
+                                            <option value="grok">xAI Grok</option>
+                                            <option value="openai">OpenAI DALL-E</option>
+                                        </select>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     `).join('')}
@@ -108,17 +125,30 @@ export class InfoPanel {
                     <a href="https://bemeaningful.ai" target="_blank" rel="noopener noreferrer" style="display:inline-block;">
                         <img src="/brand/meaningful-owl-horizontal-reverse.png" alt="Meaningful AI" style="height: 24px; opacity: 0.6; transition: opacity 0.2s;" onerror="this.style.display='none'" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" />
                     </a>
-                    <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4); font-family: monospace;">v1.0.2</span>
+                    <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4); font-family: monospace;">v1.0.3</span>
                 </div>
             </div>
         `;
 
         this.overlay.querySelector('.info-panel-close')!.addEventListener('click', () => this.hide());
-        this.overlay.querySelector('#model-select')!.addEventListener('change', (e: any) => {
-            document.dispatchEvent(new CustomEvent('llm-provider-changed', {
-                detail: { provider: e.target.value }
-            }));
-        });
+        
+        const modelSelect = this.overlay.querySelector('#model-select');
+        if (modelSelect) {
+            modelSelect.addEventListener('change', (e: any) => {
+                document.dispatchEvent(new CustomEvent('llm-provider-changed', {
+                    detail: { provider: e.target.value }
+                }));
+            });
+        }
+
+        const imageModelSelect = this.overlay.querySelector('#image-model-select');
+        if (imageModelSelect) {
+            imageModelSelect.addEventListener('change', (e: any) => {
+                document.dispatchEvent(new CustomEvent('image-provider-changed', {
+                    detail: { provider: e.target.value }
+                }));
+            });
+        }
     }
 
     public getElement(): HTMLElement {

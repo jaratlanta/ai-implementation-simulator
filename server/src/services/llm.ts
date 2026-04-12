@@ -17,26 +17,40 @@ export interface LLMResponse {
 export async function generateText(
     prompt: string,
     systemPrompt?: string,
-    options?: { temperature?: number; maxTokens?: number; provider?: string }
+    options?: { temperature?: number; maxTokens?: number; provider?: string; jsonMode?: boolean }
 ): Promise<LLMResponse> {
     const forcedProvider = options?.provider;
     
     if (forcedProvider === 'gemini') {
         const geminiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
         if (geminiKey) {
-            const geminiResult = await callGemini(prompt, systemPrompt, geminiKey, options);
-            if (geminiResult.success) return geminiResult;
+            return await callGemini(prompt, systemPrompt, geminiKey, options);
         }
-        return { success: false, content: '', error: 'Gemini API failed or not configured' };
+        return { success: false, content: '', error: 'Gemini API key missing' };
     }
 
     if (forcedProvider === 'openai') {
         const openaiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
         if (openaiKey) {
-            const openaiResult = await callOpenAI(prompt, systemPrompt, openaiKey, options);
-            if (openaiResult.success) return openaiResult;
+            return await callOpenAIApi(prompt, systemPrompt, openaiKey, 'openai', options);
         }
-        return { success: false, content: '', error: 'OpenAI API failed or not configured' };
+        return { success: false, content: '', error: 'OpenAI API key missing' };
+    }
+
+    if (forcedProvider === 'grok') {
+        const grokKey = process.env.GROK_API_KEY || process.env.VITE_GROK_API_KEY;
+        if (grokKey) {
+            return await callOpenAIApi(prompt, systemPrompt, grokKey, 'grok', options);
+        }
+        return { success: false, content: '', error: 'Grok API key missing' };
+    }
+
+    if (forcedProvider === 'anthropic') {
+        const anthropicKey = process.env.ANTHROPIC_API_KEY || process.env.VITE_ANTHROPIC_API_KEY;
+        if (anthropicKey) {
+            return await callAnthropic(prompt, systemPrompt, anthropicKey, options);
+        }
+        return { success: false, content: '', error: 'Anthropic API key missing' };
     }
 
     // Default: Try Anthropic first
@@ -50,7 +64,7 @@ export async function generateText(
     // Fallback to OpenAI
     const openaiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
     if (openaiKey) {
-        const result = await callOpenAI(prompt, systemPrompt, openaiKey, options);
+        const result = await callOpenAIApi(prompt, systemPrompt, openaiKey, 'openai', options);
         if (result.success) return result;
     }
 
@@ -139,7 +153,7 @@ async function callGemini(
     prompt: string,
     systemPrompt: string | undefined,
     apiKey: string,
-    options?: { temperature?: number; maxTokens?: number }
+    options?: { temperature?: number; maxTokens?: number; jsonMode?: boolean }
 ): Promise<LLMResponse> {
     const models = [
         { name: 'gemini-2.5-flash', version: 'v1beta' },
@@ -165,7 +179,8 @@ async function callGemini(
                     contents: [{ parts: [{ text: fullPrompt }] }],
                     generationConfig: {
                         maxOutputTokens: options?.maxTokens || 1500,
-                        temperature: options?.temperature || 0.8
+                        temperature: options?.temperature || 0.8,
+                        ...(options?.jsonMode ? { responseMimeType: "application/json" } : {})
                     },
                     safetySettings: [
                         { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -214,18 +229,22 @@ async function callGemini(
 }
 
 /**
- * Call OpenAI API
+ * Call OpenAI API or OpenAI-compatible endpoints (like Grok)
  */
-async function callOpenAI(
+async function callOpenAIApi(
     prompt: string,
     systemPrompt: string | undefined,
     apiKey: string,
-    options?: { temperature?: number; maxTokens?: number }
+    providerName: 'openai' | 'grok' = 'openai',
+    options?: { temperature?: number; maxTokens?: number; jsonMode?: boolean }
 ): Promise<LLMResponse> {
-    const model = process.env.OPENAI_MODEL || 'gpt-4o';
+    const isGrok = providerName === 'grok';
+    const model = isGrok ? 'grok-2-latest' : (process.env.OPENAI_MODEL || 'gpt-4o');
+    const apiUrl = isGrok ? 'https://api.x.ai/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
+    const logName = isGrok ? 'Grok' : 'OpenAI';
 
     try {
-        console.log(`[LLM] Calling OpenAI ${model}...`);
+        console.log(`[LLM] Calling ${logName} ${model}...`);
         const messages: any[] = [];
         if (systemPrompt) {
             messages.push({ role: 'system', content: systemPrompt });
@@ -236,10 +255,11 @@ async function callOpenAI(
             model,
             messages,
             max_tokens: options?.maxTokens || 1500,
-            temperature: options?.temperature !== undefined ? options.temperature : 0.8
+            temperature: options?.temperature !== undefined ? options.temperature : 0.8,
+            ...(options?.jsonMode ? { response_format: { type: "json_object" } } : {})
         };
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -250,30 +270,30 @@ async function callOpenAI(
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            const msg = (errorData as any).error?.message || `OpenAI API error: ${response.status}`;
-            console.warn('[LLM] OpenAI error:', response.status, msg);
-            return { success: false, content: '', error: msg, provider: 'openai' };
+            const msg = (errorData as any).error?.message || `${logName} API error: ${response.status}`;
+            console.warn(`[LLM] ${logName} error:`, response.status, msg);
+            return { success: false, content: '', error: msg, provider: providerName };
         }
 
         const data = (await response.json()) as any;
         const content = data.choices?.[0]?.message?.content || '';
 
         if (!content) {
-            return { success: false, content: '', error: 'Empty response from OpenAI', provider: 'openai' };
+            return { success: false, content: '', error: `Empty response from ${logName}`, provider: providerName };
         }
 
         return {
             success: true,
             content: content.trim(),
-            provider: 'openai',
+            provider: providerName,
             tokensUsed: data.usage ? {
                 input: data.usage.prompt_tokens || 0,
                 output: data.usage.completion_tokens || 0,
             } : undefined,
         };
     } catch (error: any) {
-        console.error('[LLM] OpenAI exception:', error.message);
-        return { success: false, content: '', error: error.message, provider: 'openai' };
+        console.error(`[LLM] ${logName} exception:`, error.message);
+        return { success: false, content: '', error: error.message, provider: providerName };
     }
 }
 

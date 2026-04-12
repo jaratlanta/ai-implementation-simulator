@@ -19,11 +19,12 @@ export interface ImageResponse {
 /**
  * Generate text using backend proxy
  */
-export async function generateText(prompt: string, systemPrompt?: string): Promise<AIResponse | null> {
+export async function generateText(prompt: string, systemPrompt?: string, provider?: string): Promise<AIResponse | null> {
     try {
         const response = await apiClient.post<AIResponse>('/ai/generate-text', {
             prompt,
-            systemPrompt
+            systemPrompt,
+            provider
         });
         return response?.data || null;
     } catch (error) {

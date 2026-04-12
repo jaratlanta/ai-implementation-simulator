@@ -40,7 +40,8 @@ export async function extractSceneDescription(
     playerDescription: string,
     recentHistory: { role: string; content: string; agent_id?: string }[],
     activeOwlId: OwlId,
-    owlOnly: boolean = true
+    owlOnly: boolean = false,
+    provider?: string
 ): Promise<string> {
     const stylePrefix = 'Warm cinematic 3D rendered scene with soft volumetric lighting, high quality textures.';
 
@@ -84,7 +85,7 @@ CRITICAL RULES:
 - Output ONLY the scene description in 2-3 sentences. No dialogue.`;
 
     try {
-        const response = await callLLM({ prompt, temperature: 0.7, maxTokens: 250 });
+        const response = await callLLM({ prompt, temperature: 0.7, maxTokens: 250, provider });
         if (response.success) {
             return `${stylePrefix} ${response.content}`;
         }

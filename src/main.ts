@@ -111,8 +111,19 @@ async function init() {
     if (geminiKey) {
         imageGenerator.setProviderConfig('gemini-2.5-flash', geminiKey);
         imageGenerator.setProviderConfig('gemini-2.5-flash-upload', geminiKey);
+        imageGenerator.setProviderConfig('gemini', geminiKey);
     } else {
         console.warn('[App] VITE_GEMINI_API_KEY is not set!');
+    }
+
+    const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (openaiKey) {
+        imageGenerator.setProviderConfig('openai', openaiKey);
+    }
+
+    const grokKey = import.meta.env.VITE_GROK_API_KEY;
+    if (grokKey) {
+        imageGenerator.setProviderConfig('grok', grokKey);
     }
 
     console.log('[App] Using brand owl icon for all agents');

@@ -33,7 +33,10 @@ export async function lookupWebsite(url: string): Promise<string | null> {
 
         const html = await response.text();
 
-        const textContent = html
+        // Truncate before running regex to prevent event loop blocking on huge raw HTML strings
+        const truncatedHtml = html.substring(0, 50000);
+
+        const textContent = truncatedHtml
             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
             .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
             .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')

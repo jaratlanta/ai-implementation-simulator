@@ -120,7 +120,8 @@ export async function routeMessage(
     currentPhase: string,
     currentAgent: OwlId,
     path: string,
-    turnsInPhase: number = 0
+    turnsInPhase: number = 0,
+    provider?: string
 ): Promise<RoutingDecision> {
     // Phase 1.1: Keep Poly for first 1-2 exchanges
     if (currentPhase === '1.1') {
@@ -206,6 +207,7 @@ Respond with ONLY valid JSON:
         const result = await llmService.generateText(prompt, undefined, {
             temperature: 0.1,
             maxTokens: 60,
+            provider
         });
 
         if (result.success && result.content) {

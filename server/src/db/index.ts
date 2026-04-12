@@ -20,7 +20,7 @@ const sslConfig = isCloudDB ? { rejectUnauthorized: false } : false;
 
 const pool = new Pool({
   connectionString: dbUrl,
-  max: isNeon ? 10 : 20, // Neon has lower connection limits on free tier
+  max: isNeon ? 10 : 100, // Increased for 50 concurrent workshop users
   idleTimeoutMillis: isNeon ? 10000 : 30000, // Neon closes idle connections faster
   connectionTimeoutMillis: 10000,
   ssl: sslConfig,

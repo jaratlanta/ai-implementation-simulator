@@ -12,14 +12,14 @@ const router = Router();
  */
 router.post('/generate-text', async (req: Request, res: Response) => {
     try {
-        const { prompt, systemPrompt } = req.body;
+        const { prompt, systemPrompt, provider, jsonMode } = req.body;
 
         if (!prompt) {
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
-        console.log(`[AI] Text generation request`);
-        const result = await llmService.generateText(prompt, systemPrompt);
+        console.log(`[AI] Text generation request (provider: ${provider || 'default'})`);
+        const result = await llmService.generateText(prompt, systemPrompt, { provider, jsonMode });
 
         if (!result.success) {
             return res.status(500).json({ error: result.error || 'Failed to generate text' });
@@ -30,6 +30,17 @@ router.post('/generate-text', async (req: Request, res: Response) => {
         console.error('[AI] Error in generate-text:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+/**
+ * POST /ai/log
+ */
+router.post('/log', (req: Request, res: Response) => {
+    const { message } = req.body;
+    if (message) {
+        console.log(message);
+    }
+    res.json({ success: true });
 });
 
 export default router;
