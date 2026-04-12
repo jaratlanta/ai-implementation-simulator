@@ -415,6 +415,44 @@ export class ChatScreen {
     }
 
     private getPhaseHtml(phase: number): string {
+        let pattern: RegExp | null = null;
+        if (phase === 1) pattern = /DISCOVERY BRIEF/i;
+        else if (phase === 2) pattern = /STRATEGY BRIEF/i;
+        else if (phase === 3) pattern = /IMPLEMENTATION PLAN/i;
+
+        if (pattern) {
+            const msgs = [...this.chatHistory].reverse();
+            for (const msg of msgs) {
+                if (msg.role === 'assistant' && pattern.test(msg.content)) {
+                    let text = msg.content;
+                    // Strip the closing conversational hook usually added by the prompts
+                    text = text.replace(/Now let's move into.*?\bReady\?/gi, '');
+                    text = text.replace(/Now let's move to Implementation.*?\bReady\?/gi, '');
+                    
+                    return `
+                        <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(255,255,255,0.9); padding: clamp(1rem, 5vw, 2.5rem) clamp(1rem, 5vw, 3rem); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-family: 'Inter', sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; margin-bottom: 2rem;">
+                            <style>
+                                .regenerated-report h1, .regenerated-report h2, .regenerated-report h3 { color: #38bdf8; margin-top: 2rem; margin-bottom: 1rem; }
+                                .regenerated-report h1 { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem; font-size: 2.2rem; }
+                                .regenerated-report h2 { font-size: 1.5rem; color: #818cf8; }
+                                .regenerated-report table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+                                .regenerated-report th, .regenerated-report td { border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem 1rem; text-align: left; }
+                                .regenerated-report th { background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+                                .regenerated-report ul, .regenerated-report ol { padding-left: 1.5rem; margin: 1rem 0; }
+                                .regenerated-report li { margin-bottom: 0.5rem; }
+                                .regenerated-report p { margin: 1rem 0; }
+                                .regenerated-report strong { color: white; }
+                                .regenerated-report em { color: #cbd5e1; }
+                            </style>
+                            <div class="regenerated-report">
+                                ${this.parseMarkdown(text)}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
         const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
         const title = `${phaseNames[phase]} Document`;
 
@@ -552,10 +590,6 @@ export class ChatScreen {
         const title = `${phaseNames[phase]} Document`;
         let html = this.getPhaseHtml(phase);
         
-        if (!html.includes('The Bigger Picture &amp; Next Steps') && !html.includes('The Bigger Picture & Next Steps')) {
-            html += this.getCtaHtml();
-        }
-
         if (this.reportModal.getElement().classList.contains('visible') && this.activeReportPhase === phase) {
             this.reportModal.updateContent(html);
         } else {
@@ -587,12 +621,14 @@ export class ChatScreen {
         this.reportModal.updateContent(`
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 6rem 2rem; color: #94a3b8; gap: 1.5rem; text-align: center; font-family: 'Inter', sans-serif;">
                 <video src="/brand/poly-animated.mp4" autoplay loop muted playsinline style="width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 8px 24px rgba(0,0,0,0.3); object-fit: cover; aspect-ratio: 1/1; border: 3px solid rgba(192, 132, 252, 0.4);"></video>
-                <div style="font-size: 1.3rem; margin-bottom: 0.5rem; color: white;">Analyzing Phase Insights...</div>
-                <div>Regenerating data for this specific phase from the latest conversation.<br>This may take a moment.</div>
+                <div style="font-size: 1.3rem; margin-bottom: 0.5rem; color: white;">Analysis Complete</div>
+                <div>Extracted Phase Report from current Conversation</div>
             </div>
         `);
-
-        await this.updateReportDataInBackground(phase);
+        
+        setTimeout(() => {
+            this.showPhaseReport(phase);
+        }, 1200);
     }
 
     private async handleRegeneratePlan() {
@@ -625,7 +661,7 @@ Generate the complete AI Implementation Plan.`;
 
             if (res.success && res.content) {
                 const htmlContent = `
-                    <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(255,255,255,0.9); padding: 2.5rem 3rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-family: 'Inter', sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: rgba(255,255,255,0.9); padding: clamp(1rem, 5vw, 2.5rem) clamp(1rem, 5vw, 3rem); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-family: 'Inter', sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto;">
                         <style>
                             .regenerated-report h1, .regenerated-report h2, .regenerated-report h3 { color: #38bdf8; margin-top: 2rem; margin-bottom: 1rem; }
                             .regenerated-report h1 { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem; font-size: 2.2rem; }
@@ -657,69 +693,7 @@ Generate the complete AI Implementation Plan.`;
         }
     }
 
-    private async updateReportDataInBackground(targetPhase?: number) {
-        const gear = this.options.currentGear || 1;
-        const phase = targetPhase !== undefined ? targetPhase : Math.floor(gear);
-        if (phase < 1 || phase > 3) return;
-        
-        if (this.chatHistory.length < 2) return;
-        
-        const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
-        let schemaPrompt = '';
-        if (phase === 1) {
-            schemaPrompt = `{ "companyName": "string or 'Not discussed'", "challenges": "string or 'Not discussed'", "bottlenecks": "string or 'Not discussed'", "goal": "string or 'Not discussed'" }`;
-        } else if (phase === 2) {
-            schemaPrompt = `{ "solutionOverview": "string or 'Not discussed'", "aiModelsOptions": "string or 'Not discussed'", "hitlStrategy": "string or 'Not discussed'", "roiEstimate": "string or 'Not discussed'" }`;
-        } else if (phase === 3) {
-            schemaPrompt = `{ "architecture": "string or 'Not discussed'", "timeline": "string or 'Not discussed'", "keyRisks": "string or 'Not discussed'", "nextSteps": "string or 'Not discussed'" }`;
-        }
 
-        const prompt = `Extract all known information from the conversation so far for the ${phaseNames[phase]} phase template.
-Keep answers concise (1-2 sentences max). DO NOT inject markdown, just plain text for JSON fields.
-Respond ONLY with a valid JSON object matching this schema exactly:
-${schemaPrompt}
-
-CONVERSATION CONTEXT:
-${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').slice(-4000)}`;
-
-        try {
-            const res = await callLLM({ 
-                prompt, 
-                temperature: 0.1, 
-                jsonMode: true,
-                provider: this.options.llmProvider
-            });
-            if (res.success && res.content) {
-                let parsed = null;
-                try {
-                    parsed = JSON.parse(res.content);
-                } catch {
-                    try {
-                        const jsonMatch = res.content.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            parsed = JSON.parse(jsonMatch[0]);
-                        }
-                    } catch (e) {
-                        console.error('[ChatScreen] Failed to parse report JSON data:', e);
-                    }
-                }
-                if (parsed) {
-                    const cacheKey = `ais_report_data_${this.options.sessionId}_${phase}`;
-                    localStorage.setItem(cacheKey, JSON.stringify(parsed));
-                    
-                    if (this.reportModal.getElement().classList.contains('visible')) {
-                        if (this.activeReportPhase === phase) {
-                            this.showPhaseReport(phase);
-                        } else if (this.activeReportPhase === null) {
-                            this.showFullReport();
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            // Background, suppress error
-        }
-    }
 
     private handleReset() {
         if (!confirm('Start a new conversation?')) return;
@@ -1007,9 +981,6 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
 
             // Generate quick reply suggestions in background
             this.generateQuickReplies(owlResponse);
-            
-            // Generate report JSON payload in background
-            this.updateReportDataInBackground();
         } else {
             const fallbackMsg = "Our owls are resting for a moment. Could you try that again?";
             this.chatHistory.push({ role: 'assistant', content: fallbackMsg, timestamp: new Date().toISOString(), agent_id: this.currentAgent });
