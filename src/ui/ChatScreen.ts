@@ -952,6 +952,33 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
         chatInput.value = '';
         this.clearQuickReplies();
 
+        const isDev = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (messageText.toLowerCase() === 'demo' && isDev) {
+            this.isSending = false;
+            this.progressBar.updatePhase(3, '3.2');
+            this.addMessage('user', messageText);
+            
+            // Build a sufficient mock history so the LLM generation has something to work with
+            this.chatHistory = [
+                { role: 'assistant', content: 'Welcome to Meaningful AI. What is your company name?', timestamp: new Date().toISOString() },
+                { role: 'user', content: 'Acme Corp, I am the COO.', timestamp: new Date().toISOString() },
+                { role: 'assistant', content: 'Great. What are your pain points?', timestamp: new Date().toISOString() },
+                { role: 'user', content: 'We spend too much time manually sorting customer support emails.', timestamp: new Date().toISOString() },
+                { role: 'assistant', content: 'Let us build an AI use case for an automated routing agent. What systems do you use?', timestamp: new Date().toISOString() },
+                { role: 'user', content: 'Zendesk and Salesforce.', timestamp: new Date().toISOString() },
+                { role: 'assistant', content: 'This will require a custom RAG agent integrated via API. Who will own this?', timestamp: new Date().toISOString() },
+                { role: 'user', content: 'Sarah in Operations.', timestamp: new Date().toISOString() },
+                { role: 'assistant', content: 'I have logged this. This concludes the strategy phase.', timestamp: new Date().toISOString() },
+                { role: 'assistant', content: 'Here is your **IMPLEMENTATION PLAN**', timestamp: new Date().toISOString() }
+            ];
+            
+            this.addMessage('assistant', "I've fast-forwarded us directly to the end and injected a mock chat history for Acme Corp! Watch the top right...", 'poly');
+            
+            this.triggerCongratulations();
+            setTimeout(() => this.handleRegeneratePlan(), 4500);
+            return;
+        }
+
         this.chatHistory.push({ role: 'user', content: messageText, timestamp: new Date().toISOString() });
         this.addMessage('user', messageText);
 
@@ -1003,10 +1030,10 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
         this.hasCongratulated = true;
         setTimeout(() => {
             const congratsHtml = `
-                <div style="text-align: center; margin-bottom: 0.5rem; padding: 0.5rem;">
-                    <video src="/brand/poly-animated-fly.mp4" autoplay loop muted playsinline style="width: 100%; max-width: 250px; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid rgba(96, 203, 232, 0.3);"></video>
-                    <h3 style="color: var(--color-true-blue); font-family: var(--font-display); margin: 0 0 0.5rem 0; font-size: 1.2rem;">Congratulations on completing your Strategy! 🚀</h3>
-                    <p style="margin: 0; font-size: 0.95rem; line-height: 1.5; color: #1a1a2e;">Your formal AI Implementation Plan is ready. Click the report button in the upper right corner to view, copy, or download it as a PDF.</p>
+                <div style="text-align: center; margin: 0;">
+                    <video src="/brand/poly-animated-fly.mp4" autoplay loop muted playsinline style="display: block; margin: 0 auto 0.75rem auto; width: 100%; max-width: 160px; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid rgba(96, 203, 232, 0.3);"></video>
+                    <h3 style="color: var(--color-true-blue); font-family: var(--font-display); margin: 0 0 0.5rem 0; font-size: 1.15rem;">Congratulations on completing your Strategy! 🚀</h3>
+                    <p style="margin: 0; font-size: 0.95rem; line-height: 1.4; color: #1a1a2e;">Your formal AI Implementation Plan is ready. Click the report button in the upper right to view, copy, or download it as a PDF.</p>
                 </div>
             `;
             
@@ -1020,10 +1047,7 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
             row.className = 'message-row owl';
             row.innerHTML = `
                 <img src="/brand/owl-icon.png" alt="Poly" class="message-avatar" style="border: 2px solid var(--color-sky-blue);" />
-                <div class="message-bubble owl" style="border: 1px solid rgba(96, 203, 232, 0.5); box-shadow: 0 4px 20px rgba(96, 203, 232, 0.15);">
-                    ${congratsHtml}
-                </div>
-            `;
+                <div class="message-bubble owl" style="white-space: normal; padding: 1.2rem; border: 1px solid rgba(96, 203, 232, 0.5); box-shadow: 0 4px 20px rgba(96, 203, 232, 0.15);">${congratsHtml}</div>`;
             messagesContainer.appendChild(row);
             requestAnimationFrame(() => { messagesContainer.scrollTop = messagesContainer.scrollHeight; });
         }, 2000);
