@@ -192,9 +192,9 @@ export class AvatarCreator {
         this.renderGridProgressive();
 
         const variations = [
-            "Use a more defined, heroic facial structure and a confident, warm expression.",
-            "Use a slightly leaner facial structure and a friendly, approachable expression.",
-            "Use a slightly more angular facial shape and a thoughtful, engaged expression."
+            "Use a slightly broader, heroic facial structure with a strong, confident expression.",
+            "Use a slightly rounder, softer facial structure with a very warm, welcoming smile.",
+            "Use a slightly leaner, more angular facial shape with an intellectual, thoughtful expression."
         ];
 
         const baseStyle = "Create a 3D animated character render based on this photo in the style of a 3D animated movie. The characters and world should be built with high-quality textures, subsurface scattering on skin, charming exaggerated features, and soft, cinematic lighting. Use a simple, solid, pure white background.";
@@ -249,7 +249,7 @@ export class AvatarCreator {
             slot.className = 'avatar-slot';
             slot.id = `avatar-slot-${i}`;
             slot.style.cssText = 'aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:rgba(34,45,99,0.08);border-radius:var(--radius-md);border:4px solid transparent;cursor:default;';
-            slot.innerHTML = '<div class="capatar-spinner" style="width:32px;height:32px;border-width:3px;"></div>';
+            slot.innerHTML = '';
             grid.appendChild(slot);
         }
 

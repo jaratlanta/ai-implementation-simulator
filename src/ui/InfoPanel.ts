@@ -58,8 +58,8 @@ const TOOLSETS = [
         key: 'vibeCoding',
         icon: '✨',
         title: 'Vibe Coding',
-        description: 'This entire application was built using AI-assisted development — Claude Code and collaborative human-AI engineering.',
-        detail: () => 'AI-built',
+        description: 'This entire application was engineered through Vibe Coding — collaborative human-AI development using Google Deepmind agents. It orchestrates a modern full-stack architecture: a Vite + TypeScript + Vanilla CSS frontend bridging to a Node.js Express backend, with a PostgreSQL database and pgvector extensions hosted via Docker. Fully containerized, managed via git, and deployed seamlessly to AWS production environments with custom HTML-to-PDF rendering pipelines—all built primarily by AI.',
+        detail: () => 'AI-built Full Stack',
     },
 ];
 
@@ -125,7 +125,7 @@ export class InfoPanel {
                     <a href="https://bemeaningful.ai" target="_blank" rel="noopener noreferrer" style="display:inline-block;">
                         <img src="/brand/meaningful-owl-horizontal-reverse.png" alt="Meaningful AI" style="height: 24px; opacity: 0.6; transition: opacity 0.2s;" onerror="this.style.display='none'" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" />
                     </a>
-                    <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4); font-family: monospace;">v1.0.6</span>
+                    <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4); font-family: monospace;">v1.0.7</span>
                 </div>
             </div>
         `;
