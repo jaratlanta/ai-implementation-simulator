@@ -428,10 +428,11 @@
       .landing-title { font-size: 2.2rem; }
       .landing-avatar { max-width: 150px; max-height: 150px; }
       h1 { font-size: 2rem; }
-      .container { margin: 0.5rem; padding: 1.5rem; }
+      .container { margin: 0; padding: 0.5rem; border-radius: 0; }
       .message-bubble { max-width: 100%; }
       .avatar-grid { max-width: 100%; }
       .info-btn { display: none !important; }
+      .chat-header-info { display: none !important; }
 
       /* MOBILE: Scene panel not needed since images are inline */
       .chat-layout { flex-direction: column; }
@@ -448,7 +449,8 @@
       .report-modal { width: 95%; max-height: 95vh; }
       .report-modal-header { flex-direction: column; align-items: flex-start; gap: 1rem; padding: 1rem; }
       .report-modal-header h2 { font-size: 1.05rem; }
-      .report-modal-actions { width: 100%; justify-content: space-between; gap: 0.5rem; }
+      .report-modal-actions { width: 100%; flex-direction: column; gap: 0.5rem; }
+      .report-modal-actions > * { width: 100%; justify-content: center; display: flex; }
       .report-modal-body { padding: 1rem; }
       .report-copy-btn { padding: 0.5rem; justify-content: center; flex: 1; }
       .report-copy-btn svg { width: 14px; height: 14px; }
@@ -459,6 +461,14 @@
       /* Circular send button on mobile */
       .send-btn-styled { width: 48px; height: 48px; border-radius: 50% !important; padding: 0 !important; justify-content: center; }
       .send-btn-text { display: none; }
+
+      .message-row { flex-direction: column-reverse; gap: 0.35rem; margin-bottom: 1.5rem; }
+      .message-row.owl { align-items: flex-start; }
+      .message-row.user { align-items: flex-end; }
+      .message-avatar { margin-bottom: 0px !important; margin-top: 0px; margin-left: 0.5rem !important; margin-right: 0.5rem !important; }
+      .message-bubble { width: calc(100% - 1rem); }
+      .message-row.owl .message-bubble { border-bottom-left-radius: 0; border-bottom-right-radius: var(--radius-lg); }
+      .message-row.user .message-bubble { border-bottom-right-radius: 0; border-bottom-left-radius: var(--radius-lg); }
 
       .scene-panel-logo { display: none; }
     }

@@ -32,9 +32,6 @@ export class LandingPage {
                 <button id="path-discovery" class="btn path-btn" style="font-size: 1rem; padding: 1rem 2rem;">
                     Discover AI Use Cases
                 </button>
-                <button id="path-strategy" class="btn btn-outline path-btn" style="font-size: 1rem; padding: 1rem 2rem;">
-                    Refine My AI Strategy
-                </button>
             </div>
 
             <p style="margin-top: 2rem; font-size: 0.8rem; color: var(--color-text-light);">
@@ -43,15 +40,10 @@ export class LandingPage {
         `;
 
         const discoveryBtn = this.element.querySelector('#path-discovery') as HTMLButtonElement;
-        const strategyBtn = this.element.querySelector('#path-strategy') as HTMLButtonElement;
 
         discoveryBtn.addEventListener('click', () => {
             buttonPress(discoveryBtn);
             setTimeout(() => this.onStart('discovery'), 150);
-        });
-        strategyBtn.addEventListener('click', () => {
-            buttonPress(strategyBtn);
-            setTimeout(() => this.onStart('strategy'), 150);
         });
     }
 
