@@ -447,7 +447,7 @@ export class ChatScreen {
                                 .regenerated-report h1, .regenerated-report h2, .regenerated-report h3 { color: #38bdf8; margin-top: 2rem; margin-bottom: 1rem; }
                                 .regenerated-report h1 { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem; font-size: 2.2rem; }
                                 .regenerated-report h2 { font-size: 1.5rem; color: #818cf8; }
-                                .regenerated-report table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+                                .regenerated-report table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
                                 .regenerated-report th, .regenerated-report td { border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem 1rem; text-align: left; }
                                 .regenerated-report th { background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
                                 .regenerated-report ul, .regenerated-report ol { padding-left: 1.5rem; margin: 1rem 0; }
@@ -490,7 +490,7 @@ export class ChatScreen {
         <p style="font-size: 1.15rem; font-weight: 500; margin: 0; line-height: 1.5;">${data.companyName || 'Tracking firm details...'}</p>
      </div>
 
-     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
         <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #818cf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
            <h3 style="color: #818cf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Key Challenges</h3>
            <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.challenges || 'Listening for key challenges...'}</p>
@@ -522,7 +522,7 @@ export class ChatScreen {
         <p style="font-size: 1.15rem; line-height: 1.6; margin: 0;">${data.solutionOverview || 'Designing solution blueprint...'}</p>
      </div>
 
-     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
         <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #38bdf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
            <h3 style="color: #38bdf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Selected AI Architecture</h3>
            <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.aiModelsOptions || 'Evaluating LLM integrations...'}</p>
@@ -554,7 +554,7 @@ export class ChatScreen {
         <p style="font-size: 1.15rem; line-height: 1.6; margin: 0;">${data.architecture || 'Finalizing system design...'}</p>
      </div>
 
-     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
         <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-top: 3px solid #38bdf8; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
            <h3 style="color: #38bdf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; margin-top: 0;">Milestone Timeline</h3>
            <p style="font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; margin: 0;">${data.timeline || 'Estimating rollout sprints...'}</p>
@@ -740,7 +740,7 @@ Generate the complete AI Implementation Plan.`;
                             .regenerated-report h1, .regenerated-report h2, .regenerated-report h3 { color: #38bdf8; margin-top: 2rem; margin-bottom: 1rem; }
                             .regenerated-report h1 { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem; font-size: 2.2rem; }
                             .regenerated-report h2 { font-size: 1.5rem; color: #818cf8; }
-                            .regenerated-report table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+                            .regenerated-report table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
                             .regenerated-report th, .regenerated-report td { border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem 1rem; text-align: left; }
                             .regenerated-report th { background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
                             .regenerated-report ul, .regenerated-report ol { padding-left: 1.5rem; margin: 1rem 0; }
