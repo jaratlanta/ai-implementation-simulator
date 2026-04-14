@@ -411,6 +411,16 @@ export class ChatScreen {
             }
         });
 
+        document.addEventListener('view-full-report', () => {
+            this.showFullReport();
+        });
+
+        document.addEventListener('view-phase-report', (e: any) => {
+            if (e.detail) {
+                this.showPhaseReport(e.detail);
+            }
+        });
+
         // Report modal
         this.element.appendChild(this.reportModal.getElement());
     }
@@ -623,24 +633,86 @@ export class ChatScreen {
         this.reportModal.updateContent(`
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 6rem 2rem; color: #94a3b8; gap: 1.5rem; text-align: center; font-family: 'Inter', sans-serif;">
                 <video src="/brand/poly-animated.mp4" autoplay loop muted playsinline style="width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 8px 24px rgba(0,0,0,0.3); object-fit: cover; aspect-ratio: 1/1; border: 3px solid rgba(192, 132, 252, 0.4);"></video>
-                <div style="font-size: 1.3rem; margin-bottom: 0.5rem; color: white;">Analysis Complete</div>
-                <div>Extracted Phase Report from current Conversation</div>
+                <div style="font-size: 1.3rem; margin-bottom: 0.5rem; color: white;">Analyzing Phase Insights...</div>
+                <div>Regenerating data for this specific phase from the latest conversation.<br>This may take a moment.</div>
             </div>
         `);
         
-        setTimeout(() => {
-            this.showPhaseReport(phase);
-        }, 1200);
+        await this.updateReportDataInBackground(phase);
+    }
+
+    private async updateReportDataInBackground(targetPhase?: number) {
+        const gear = this.options.currentGear || 1;
+        const phase = targetPhase !== undefined ? targetPhase : Math.floor(gear);
+        if (phase < 1 || phase > 3) return;
+        
+        if (this.chatHistory.length < 2) return;
+        
+        const phaseNames = ['', 'Discovery', 'Strategy', 'Implementation'];
+        let schemaPrompt = '';
+        if (phase === 1) {
+            schemaPrompt = `{ "companyName": "string or 'Not discussed'", "challenges": "string or 'Not discussed'", "bottlenecks": "string or 'Not discussed'", "goal": "string or 'Not discussed'" }`;
+        } else if (phase === 2) {
+            schemaPrompt = `{ "solutionOverview": "string or 'Not discussed'", "aiModelsOptions": "string or 'Not discussed'", "hitlStrategy": "string or 'Not discussed'", "roiEstimate": "string or 'Not discussed'" }`;
+        } else if (phase === 3) {
+            schemaPrompt = `{ "architecture": "string or 'Not discussed'", "timeline": "string or 'Not discussed'", "keyRisks": "string or 'Not discussed'", "nextSteps": "string or 'Not discussed'" }`;
+        }
+
+        const prompt = `Extract all known information from the conversation so far for the ${phaseNames[phase]} phase template.
+Keep answers concise (1-2 sentences max). DO NOT inject markdown, just plain text for JSON fields.
+Respond ONLY with a valid JSON object matching this schema exactly:
+${schemaPrompt}
+
+CONVERSATION CONTEXT:
+${this.chatHistory.map(m => `${m.role}: ${m.content}`).join('\n').slice(-4000)}`;
+
+        try {
+            const res = await callLLM({ 
+                prompt, 
+                temperature: 0.1, 
+                jsonMode: true,
+                provider: this.options.llmProvider
+            });
+            if (res.success && res.content) {
+                let parsed = null;
+                try {
+                    parsed = JSON.parse(res.content);
+                } catch {
+                    try {
+                        const jsonMatch = res.content.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            parsed = JSON.parse(jsonMatch[0]);
+                        }
+                    } catch (e) {
+                        console.error('[ChatScreen] Failed to parse report JSON data:', e);
+                    }
+                }
+                if (parsed) {
+                    const cacheKey = `ais_report_data_${this.options.sessionId}_${phase}`;
+                    localStorage.setItem(cacheKey, JSON.stringify(parsed));
+                    
+                    if (this.reportModal.getElement().classList.contains('visible')) {
+                        if (this.activeReportPhase === phase) {
+                            this.showPhaseReport(phase);
+                        } else if (this.activeReportPhase === null) {
+                            this.showFullReport();
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Background, suppress error
+        }
     }
 
     private async handleRegeneratePlan() {
-        this.reportModal.updateContent(`
+        this.reportModal.show("Meaningful AI - Full Implementation Report", `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 6rem 2rem; color: #94a3b8; gap: 1.5rem; text-align: center; font-family: 'Inter', sans-serif;">
                 <video src="/brand/poly-animated.mp4" autoplay loop muted playsinline style="width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 8px 24px rgba(0,0,0,0.3); object-fit: cover; aspect-ratio: 1/1; border: 3px solid rgba(56, 189, 248, 0.4);"></video>
                 <div style="font-size: 1.3rem; margin-bottom: 0.5rem; color: white;">Synthesizing Chat History...</div>
                 <div>Generating comprehensive implementation plan.<br>This may take 15-30 seconds.</div>
             </div>
-        `);
+        `, () => this.handleRegeneratePlan());
 
         const systemPrompt = `You are an expert AI implementation strategist.
 Your task is to generate a beautiful, comprehensive AI Implementation Plan based ONLY on the provided chat history.
@@ -1031,6 +1103,9 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
 
             // Generate quick reply suggestions in background
             this.generateQuickReplies(owlResponse);
+            
+            // Generate report JSON payload in background
+            this.updateReportDataInBackground();
 
             if (/(?:\n|^)(?:\*\*|#+)\s*(?:AI\s+)?IMPLEMENTATION PLAN/i.test(owlResponse) && !this.hasCongratulated) {
                 this.triggerCongratulations();
