@@ -883,7 +883,24 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
                         }
                     }
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        this.renderQuickReplies(parsed.slice(0, 3));
+                        let finalReplies = parsed.slice(0, 3);
+                        
+                        // Only inject fallback for detailed questions, well past initial discovery
+                        if (this.chatHistory.length > 5) {
+                            finalReplies = parsed.slice(0, 2); // Retain max 3 total options natively
+                            const dismissals = [
+                                "I'm not sure, make an assumption.",
+                                "I don't know, what's standard?",
+                                "Unsure, you decide for us.",
+                                "Not sure, suggest a best practice.",
+                                "I don't really know..."
+                            ];
+                            // Predictable rotating selection to avoid consecutive duplicates
+                            const rotatedDismissal = dismissals[this.chatHistory.length % dismissals.length];
+                            finalReplies.push(rotatedDismissal);
+                        }
+                        
+                        this.renderQuickReplies(finalReplies);
                     }
                 } catch {
                     console.warn('[ChatScreen] Failed to parse quick replies', result.content);
