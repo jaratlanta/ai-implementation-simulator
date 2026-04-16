@@ -934,9 +934,9 @@ CRITICAL RULES:
 - Good: "Tell me about my company", "Our biggest challenge is...", "Yes, let's do that"
 - BAD: "TechFlow Solutions, I'm CEO", "Jason from marketing" — NEVER make up identities
 - One can be a direct affirmative, one a different angle, one asking for clarification
-- Output ONLY a JSON array of strings, nothing else
+- Output ONLY a valid JSON object containing a "replies" array of strings, nothing else
 
-Example output: ["Yes, about 20 people","We handle most things manually","Can you explain more?"]`;
+Example output: { "replies": ["Yes, about 20 people", "We handle most things manually", "Can you explain more?"] }`;
 
             const result = await callLLM({ prompt, temperature: 0.7, maxTokens: 100, jsonMode: true, provider: this.options.llmProvider });
 
@@ -946,20 +946,33 @@ Example output: ["Yes, about 20 people","We handle most things manually","Can yo
                     try {
                         parsed = JSON.parse(result.content);
                     } catch {
-                        // Resilient stripping: extract only the JSON array block natively regardless of surrounding markdown
-                        const match = result.content.match(/\[[\s\S]*\]/);
-                        if (match) {
-                            parsed = JSON.parse(match[0]);
+                        // Resilient stripping: extract JSON natively regardless of surrounding markdown
+                        const matchArray = result.content.match(/\[[\s\S]*\]/);
+                        const matchObj = result.content.match(/\{[\s\S]*\}/);
+                        
+                        if (matchArray && (!matchObj || matchArray[0].length > matchObj[0].length)) {
+                            parsed = JSON.parse(matchArray[0]);
+                        } else if (matchObj) {
+                            parsed = JSON.parse(matchObj[0]);
                         } else {
-                            throw new Error("No array found");
+                            throw new Error("No JSON found");
                         }
                     }
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        let finalReplies = parsed.slice(0, 3);
+
+                    // Normalize to a flat array whether response was `[...]` or `{ "replies": [...] }`
+                    let extractedArray: any[] = [];
+                    if (Array.isArray(parsed)) {
+                        extractedArray = parsed;
+                    } else if (parsed && Array.isArray(parsed.replies)) {
+                        extractedArray = parsed.replies;
+                    }
+
+                    if (extractedArray.length > 0) {
+                        let finalReplies = extractedArray.slice(0, 3);
                         
                         // Only inject fallback for detailed questions, well past initial discovery
                         if (this.chatHistory.length > 5) {
-                            finalReplies = parsed.slice(0, 2); // Retain max 3 total options natively
+                            finalReplies = extractedArray.slice(0, 2); // Retain max 3 total options natively
                             const dismissals = [
                                 "I'm not sure, make an assumption.",
                                 "I don't know, what's standard?",

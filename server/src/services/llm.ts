@@ -61,17 +61,17 @@ export async function generateText(
         console.warn('[LLM] Anthropic failed, falling back downstream:', result.error);
     }
 
-    // Fallback to OpenAI
-    const openaiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
-    if (openaiKey) {
-        const result = await callOpenAIApi(prompt, systemPrompt, openaiKey, 'openai', options);
+    // Fallback 1 to Gemini
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (geminiKey) {
+        const result = await callGemini(prompt, systemPrompt, geminiKey, options);
         if (result.success) return result;
     }
 
-    // Fallback to Gemini
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-    if (geminiKey) {
-        return callGemini(prompt, systemPrompt, geminiKey, options);
+    // Fallback 2 to OpenAI
+    const openaiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+    if (openaiKey) {
+        return callOpenAIApi(prompt, systemPrompt, openaiKey, 'openai', options);
     }
 
     return { success: false, content: '', error: 'No LLM API keys configured' };
